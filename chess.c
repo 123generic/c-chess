@@ -373,3 +373,34 @@ int single_pawn_pushes(ChessBoard *board, U64 *moves, int move_p) {
 
     return num_moves;
 }
+
+// board[sq] should, of course, have a rook on it
+U64 get_rook_moves(ChessBoard* board, MagicTable* magic_table, int sq) {
+    U64 pieces, mask, magic, moves;
+    int ind;
+    
+    pieces = board->all_pieces;
+    mask = magic_table->occupancy_mask[sq];
+    magic = magic_table->magic[sq];
+    ind = ( (pieces & mask) * magic ) >> 52;
+
+    moves = magic_table->move[4096 * sq + ind];
+    return moves;
+}
+
+int extract_rook_moves(U64 *moves, int move_p, U64 rook_moves, int sq, int wtm) {
+    int ind, to, piece, captured, num_moves;
+
+    while ((ind = rightmost_set(rook_moves)) != -1) {
+        // this means the move is ind + 8 -> ind
+        to = ind;
+        piece = wtm ? WHITE_ROOK : BLACK_ROOK;
+        captured = EMPTY_SQ;
+        moves[move_p + num_moves] = sq  // from
+                                  | to << 6 
+                                  | piece << 12 
+                                  | captured << 16;
+        num_moves++;
+        BB_CLEAR(rook_moves, ind);
+    }
+}
