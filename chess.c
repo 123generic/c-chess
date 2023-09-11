@@ -319,6 +319,7 @@ int ChessBoard_piece_at(ChessBoard *board, int ind) {
 // 6-11: to square
 // 12-15: piece
 // 16-19: capture piece
+// 20-23: move type
 
 U64 move_from_uci(ChessBoard *board, char *uci) {
     // uci: rank-file rank-file [promotion]
@@ -334,13 +335,12 @@ U64 move_from_uci(ChessBoard *board, char *uci) {
                 __func__, __LINE__);
         exit(1);
     }
-    return from | to << 6 | piece << 12 | captured << 16;
+    return from | to << 6 | piece << 12 | captured << 16 | UNKNOWN << 20;
 }
 
 // move_p points to the end of the moves array
 // moves is assumed to be large enough to hold all moves (256)
-// TODO: Update to unified function for all pawn moves, colors
-U64 get_pawn_moves(ChessBoard *board, PawnMoveType move_type) {
+U64 get_pawn_moves(ChessBoard *board, MoveType move_type) {
     U64 pawns, moved_pawns, rank_mask;
     int wtm = board->white_to_move;
 
@@ -369,7 +369,7 @@ U64 get_pawn_moves(ChessBoard *board, PawnMoveType move_type) {
 }
 
 int extract_pawn_moves(ChessBoard *board, U64 *moves, int move_p,
-                       U64 pawn_moves, PawnMoveType move_type) {
+                       U64 pawn_moves, MoveType move_type) {
     int ind, to, from, piece, captured;
     int num_moves = 0;
     int wtm = board->white_to_move;
@@ -383,7 +383,7 @@ int extract_pawn_moves(ChessBoard *board, U64 *moves, int move_p,
                 piece = wtm ? WHITE_PAWN : BLACK_PAWN;
                 captured = EMPTY_SQ;
                 moves[move_p + num_moves] =
-                    from | to << 6 | piece << 12 | captured << 16;
+                    from | to << 6 | piece << 12 | captured << 16 | move_type << 20;
                 num_moves++;
                 BB_CLEAR(pawn_moves, ind);
             }
@@ -412,9 +412,11 @@ U64 get_rook_moves(ChessBoard *board, MagicTable *magic_table, int sq) {
     return moves;
 }
 
-int extract_rook_moves(U64 *moves, int move_p, U64 rook_moves, int sq,
-                       int wtm) {
-    int ind, to, piece, captured, num_moves = 0;
+int extract_rook_moves(ChessBoard *board, U64 *moves, int move_p,
+                       U64 rook_moves, int sq) {
+    int ind, to, piece, captured;
+    int wtm = board->white_to_move;
+    int num_moves = 0;
 
     while ((ind = rightmost_set(rook_moves)) != -1) {
         // this means the move is ind + 8 -> ind

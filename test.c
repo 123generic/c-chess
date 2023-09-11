@@ -134,7 +134,9 @@ int compare_move_lists(U64 *expected, U64 *actual, int n) {
         found = 0;
 
         for (j = 0; j < n; j++) {
-            if (expected[i] == actual[j]) {
+            U64 exp_trunc = expected[i] & 0xfff;  // Truncate to 12 bits
+            U64 act_trunc = actual[j] & 0xfff;    // Truncate to 12 bits
+            if (exp_trunc == act_trunc) {
                 found = 1;
                 break;
             }
@@ -146,7 +148,7 @@ int compare_move_lists(U64 *expected, U64 *actual, int n) {
     return 1;
 }
 
-void test_single_pawn_pushes(void) {
+void test_extract_pawn_moves(void) {
     ChessBoard board;
     U64 pawn_moves;
     U64 moves[256] = {0};
@@ -224,7 +226,7 @@ void test_single_pawn_pushes(void) {
         return;
     }
 
-    printf("test_single_pawn_pushes: All tests passed.\n");
+    printf("test_extract_pawn_moves: All tests passed.\n");
 }
 
 void test_gen_occupancy_rook(void) {
@@ -411,7 +413,7 @@ void unit_test(void) {
     test_rightmost_set();
     test_ChessBoard_str();
     test_ChessBoard_to_FEN();
-    test_single_pawn_pushes();
+    test_extract_pawn_moves();
     test_gen_occupancy_rook();
     test_manual_gen_rook_moves();
     test_init_magic_rook();

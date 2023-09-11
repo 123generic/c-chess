@@ -103,18 +103,27 @@ void ChessBoard_to_FEN(ChessBoard *board, char *str);
 int ChessBoard_piece_at(ChessBoard *board, int ind);
 
 // Move generation
+// enum fits in 4 bits
 typedef enum {
-    SINGLE_PUSH,
-    DOUBLE_PUSH,
-    CAPTURE,
-    EN_PASSANT,
-    PROMOTION,
-    PROMOTION_CAPTURE,
-} PawnMoveType;
+    SINGLE_PUSH = 0,
+    DOUBLE_PUSH = 1,
+    CAPTURE = 2,
+    EN_PASSANT = 3,
+    PROMOTION = 4,
+    PROMOTION_CAPTURE = 5,
 
-U64 get_pawn_moves(ChessBoard *board, PawnMoveType move_type);
+    CRAWL = 6,
+    SLIDE = 7,
+
+    CASTLE_KING = 8,
+    CASTLE_QUEEN = 9,
+
+    UNKNOWN = 10,
+} MoveType;
+
+U64 get_pawn_moves(ChessBoard *board, MoveType move_type);
 int extract_pawn_moves(ChessBoard *board, U64 *moves, int move_p,
-                       U64 pawn_moves, PawnMoveType move_type);
+                       U64 pawn_moves, MoveType move_type);
 U64 move_from_uci(ChessBoard *board, char *uci);
 
 // Magics
