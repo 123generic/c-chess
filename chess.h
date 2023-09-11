@@ -36,7 +36,8 @@ typedef uint64_t U64;
 #define BLACK_QUEEN 11
 #define BLACK_KING 12
 
-// board.white_to_move = 1 means we can do side = board.white_to_move in fn calls
+// board.white_to_move = 1 means we can do side = board.white_to_move in fn
+// calls
 #define WHITE 1
 #define BLACK 0
 
@@ -112,7 +113,8 @@ typedef enum {
 } PawnMoveType;
 
 U64 get_pawn_moves(ChessBoard *board, PawnMoveType move_type);
-int extract_pawn_moves(ChessBoard *board, U64 *moves, int move_p, U64 pawn_moves, PawnMoveType move_type);
+int extract_pawn_moves(ChessBoard *board, U64 *moves, int move_p,
+                       U64 pawn_moves, PawnMoveType move_type);
 U64 move_from_uci(ChessBoard *board, char *uci);
 
 // Magics
@@ -120,13 +122,13 @@ typedef struct {
     U64 magic[64];
     U64 occupancy_mask[64];
     U64 move[64 * 4096];  // index as 4096 * square + magic_ind
-} MagicTable;  // TODO
+} MagicTable;             // TODO
 extern MagicTable rook_magic;
 extern MagicTable bishop_magic;
 
 // Rooks
 void gen_occupancy_rook(MagicTable *magic_table);
-U64 rook_moves(ChessBoard *board, MagicTable* magic_table, int square);
+U64 rook_moves(ChessBoard *board, MagicTable *magic_table, int square);
 U64 manual_gen_rook_moves(U64 bb, int square);
 U64 find_magic_rook(U64 *occupancy_mask_table, int sq);
 void fill_rook_moves(U64 *move, U64 occupancy_mask, U64 magic, int sq);

@@ -1,15 +1,15 @@
 #include "chess.h"
 
-#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 // Bitboard helpers
 int rightmost_set(U64 bb) {
     if (bb == 0) return -1;
     // count trailing zeros unsigned long long
     return __builtin_ctzll(bb);
-    
+
     // Alternative implementation ...
     // int i = 0;
     // while (bb != 0 && ((bb & 1) == 0)) {
@@ -42,10 +42,8 @@ U64 make_bitboard(char *str) {
     }
 
     if (str[64] != '\0') {
-        fprintf(stderr, 
-            "Error: bitboard string is wrong length [%s(%s):%d]\n",
-            __FILE__, __func__, __LINE__
-        );
+        fprintf(stderr, "Error: bitboard string is wrong length [%s(%s):%d]\n",
+                __FILE__, __func__, __LINE__);
         exit(1);
     }
 
@@ -75,23 +73,47 @@ void ChessBoard_from_FEN(ChessBoard *board, char *fen) {
     // Set all 0
     memset(board, 0, sizeof(ChessBoard));
 
-    // Set bitboards
-    #define SET(bb, ind) board->bb |= 1ULL << ind
+// Set bitboards
+#define SET(bb, ind) board->bb |= 1ULL << ind
     int i = 0, ind = 63;
     for (/* using i, ind */; fen[i] != ' '; i++, ind--) {
         switch (fen[i]) {
-            case 'p': SET(black_pawns, ind); break;
-            case 'r': SET(black_rooks, ind); break;
-            case 'n': SET(black_knights, ind); break;
-            case 'b': SET(black_bishops, ind); break;
-            case 'q': SET(black_queens, ind); break;
-            case 'k': SET(black_king, ind); break;
-            case 'P': SET(white_pawns, ind); break;
-            case 'R': SET(white_rooks, ind); break;
-            case 'N': SET(white_knights, ind); break;
-            case 'B': SET(white_bishops, ind); break;
-            case 'Q': SET(white_queens, ind); break;
-            case 'K': SET(white_king, ind); break;
+            case 'p':
+                SET(black_pawns, ind);
+                break;
+            case 'r':
+                SET(black_rooks, ind);
+                break;
+            case 'n':
+                SET(black_knights, ind);
+                break;
+            case 'b':
+                SET(black_bishops, ind);
+                break;
+            case 'q':
+                SET(black_queens, ind);
+                break;
+            case 'k':
+                SET(black_king, ind);
+                break;
+            case 'P':
+                SET(white_pawns, ind);
+                break;
+            case 'R':
+                SET(white_rooks, ind);
+                break;
+            case 'N':
+                SET(white_knights, ind);
+                break;
+            case 'B':
+                SET(white_bishops, ind);
+                break;
+            case 'Q':
+                SET(white_queens, ind);
+                break;
+            case 'K':
+                SET(white_king, ind);
+                break;
             case '/':
                 ind++;
                 break;
@@ -102,12 +124,14 @@ void ChessBoard_from_FEN(ChessBoard *board, char *fen) {
         }
     }
     i++;  // skip the space
-    #undef SET
+#undef SET
 
-    board->white_pieces = board->white_pawns | board->white_rooks | board->white_knights 
-                      | board->white_bishops | board->white_queens | board->white_king;
-    board->black_pieces = board->black_pawns | board->black_rooks | board->black_knights
-                      | board->black_bishops | board->black_queens | board->black_king;
+    board->white_pieces = board->white_pawns | board->white_rooks |
+                          board->white_knights | board->white_bishops |
+                          board->white_queens | board->white_king;
+    board->black_pieces = board->black_pawns | board->black_rooks |
+                          board->black_knights | board->black_bishops |
+                          board->black_queens | board->black_king;
     board->all_pieces = board->white_pieces | board->black_pieces;
 
     // Set side to move
@@ -128,7 +152,7 @@ void ChessBoard_from_FEN(ChessBoard *board, char *fen) {
 
     // EP square
     if (fen[i] != '-') {
-        board->ep = 8 * (fen[i+1] - '0') - (fen[i] - 'a') - 1;
+        board->ep = 8 * (fen[i + 1] - '0') - (fen[i] - 'a') - 1;
         i += 3;  // skip the square and the space
     } else {
         board->ep = -1;
@@ -145,10 +169,8 @@ void ChessBoard_from_FEN(ChessBoard *board, char *fen) {
 
     // Check that we're done, or error
     if (fen[i] != '\0') {
-        fprintf(stderr, 
-            "Error: FEN string is invalid [%s(%s):%d]\n",
-            __FILE__, __func__, __LINE__
-        );
+        fprintf(stderr, "Error: FEN string is invalid [%s(%s):%d]\n", __FILE__,
+                __func__, __LINE__);
         exit(1);
     }
 }
@@ -194,7 +216,6 @@ void ChessBoard_to_FEN(ChessBoard *board, char *str) {
     // Write board
     str_p = 0;
     for (row = 0; row < 8; row++) {
-        
         // Process single row
         run_len = 0;
         for (col = 0; col < 8; col++) {
@@ -216,9 +237,8 @@ void ChessBoard_to_FEN(ChessBoard *board, char *str) {
             str[str_p++] = '0' + run_len;
             run_len = 0;
         }
-        
-        if (row != 7)
-            str[str_p++] = '/';
+
+        if (row != 7) str[str_p++] = '/';
     }
 
     str[str_p++] = ' ';
@@ -305,15 +325,13 @@ U64 move_from_uci(ChessBoard *board, char *uci) {
     // TODO: promotion
     int from, to, piece, captured;
     from = 7 - (uci[0] - 'a') + 8 * (uci[1] - '1');
-    to =   7 - (uci[2] - 'a') + 8 * (uci[3] - '1');
+    to = 7 - (uci[2] - 'a') + 8 * (uci[3] - '1');
 
     piece = ChessBoard_piece_at(board, from);
     captured = ChessBoard_piece_at(board, to);
     if (piece == 0) {
-        fprintf(stderr, 
-            "Error: No piece at %s [%s(%s):%d]\n",
-            uci, __FILE__, __func__, __LINE__
-        );
+        fprintf(stderr, "Error: No piece at %s [%s(%s):%d]\n", uci, __FILE__,
+                __func__, __LINE__);
         exit(1);
     }
     return from | to << 6 | piece << 12 | captured << 16;
@@ -343,16 +361,16 @@ U64 get_pawn_moves(ChessBoard *board, PawnMoveType move_type) {
 
         default:
             printf("Error: Unimplemented pawn move type [%s(%s):%d]\n",
-                __FILE__, __func__, __LINE__
-            );
+                   __FILE__, __func__, __LINE__);
             exit(1);
     }
 
     return moved_pawns;
 }
 
-int extract_pawn_moves(ChessBoard *board, U64 *moves, int move_p, U64 pawn_moves, PawnMoveType move_type) {
-    int ind, to, from, piece, captured; 
+int extract_pawn_moves(ChessBoard *board, U64 *moves, int move_p,
+                       U64 pawn_moves, PawnMoveType move_type) {
+    int ind, to, from, piece, captured;
     int num_moves = 0;
     int wtm = board->white_to_move;
 
@@ -364,10 +382,8 @@ int extract_pawn_moves(ChessBoard *board, U64 *moves, int move_p, U64 pawn_moves
                 from = wtm ? ind - 8 : ind + 8;
                 piece = wtm ? WHITE_PAWN : BLACK_PAWN;
                 captured = EMPTY_SQ;
-                moves[move_p + num_moves] = from
-                                          | to << 6 
-                                          | piece << 12 
-                                          | captured << 16;
+                moves[move_p + num_moves] =
+                    from | to << 6 | piece << 12 | captured << 16;
                 num_moves++;
                 BB_CLEAR(pawn_moves, ind);
             }
@@ -375,8 +391,7 @@ int extract_pawn_moves(ChessBoard *board, U64 *moves, int move_p, U64 pawn_moves
 
         default:
             printf("Error: Unimplemented pawn move type [%s(%s):%d]\n",
-                __FILE__, __func__, __LINE__
-            );
+                   __FILE__, __func__, __LINE__);
             exit(1);
     }
 
@@ -384,20 +399,21 @@ int extract_pawn_moves(ChessBoard *board, U64 *moves, int move_p, U64 pawn_moves
 }
 
 // board[sq] should, of course, have a rook on it
-U64 get_rook_moves(ChessBoard* board, MagicTable* magic_table, int sq) {
+U64 get_rook_moves(ChessBoard *board, MagicTable *magic_table, int sq) {
     U64 pieces, mask, magic, moves;
     int ind;
-    
+
     pieces = board->all_pieces;
     mask = magic_table->occupancy_mask[sq];
     magic = magic_table->magic[sq];
-    ind = ( (pieces & mask) * magic ) >> 52;
+    ind = ((pieces & mask) * magic) >> 52;
 
     moves = magic_table->move[4096 * sq + ind];
     return moves;
 }
 
-int extract_rook_moves(U64 *moves, int move_p, U64 rook_moves, int sq, int wtm) {
+int extract_rook_moves(U64 *moves, int move_p, U64 rook_moves, int sq,
+                       int wtm) {
     int ind, to, piece, captured, num_moves = 0;
 
     while ((ind = rightmost_set(rook_moves)) != -1) {
@@ -405,13 +421,10 @@ int extract_rook_moves(U64 *moves, int move_p, U64 rook_moves, int sq, int wtm) 
         to = ind;
         piece = wtm ? WHITE_ROOK : BLACK_ROOK;
         captured = EMPTY_SQ;
-        moves[move_p + num_moves] = sq  // from
-                                  | to << 6 
-                                  | piece << 12 
-                                  | captured << 16;
+        moves[move_p + num_moves] = sq | to << 6 | piece << 12 | captured << 16;
         num_moves++;
         BB_CLEAR(rook_moves, ind);
     }
 
-	return -1; // TODO
+    return -1;  // TODO
 }

@@ -1,6 +1,7 @@
-#include "chess.h"
 #include <stdio.h>
 #include <string.h>
+
+#include "chess.h"
 #include "rng.h"
 
 // Tests
@@ -36,7 +37,7 @@ void test_rightmost_set(void) {
     }
 
     // Test with large number
-    U64 large_num = ((U64)1 << 63); // The most significant bit is set
+    U64 large_num = ((U64)1 << 63);  // The most significant bit is set
     if (rightmost_set(large_num) != 63) {
         printf("Test failed: input large_num\n");
         return;
@@ -48,19 +49,26 @@ void test_rightmost_set(void) {
 void test_ChessBoard_str(void) {
     ChessBoard board;
     char str[65];  // 64 + 1 for null terminator
-    
+
     // Test Case 1: Starting position
-    ChessBoard_from_FEN(&board, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    ChessBoard_from_FEN(
+        &board, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     ChessBoard_str(&board, str);
-    if (strcmp(str, "rnbqkbnrpppppppp................................PPPPPPPPRNBQKBNR") != 0) {
+    if (strcmp(str,
+               "rnbqkbnrpppppppp................................"
+               "PPPPPPPPRNBQKBNR") != 0) {
         printf("Test failed: Starting position\n");
         return;
     }
 
     // Test Case 2: Some arbitrary position
-    ChessBoard_from_FEN(&board, "rnbqk2r/pppp1ppp/4pn2/8/1b1P4/2N1PN2/PPP2PPP/R1BQK2R w KQkq - 0 1");
+    ChessBoard_from_FEN(
+        &board,
+        "rnbqk2r/pppp1ppp/4pn2/8/1b1P4/2N1PN2/PPP2PPP/R1BQK2R w KQkq - 0 1");
     ChessBoard_str(&board, str);
-    if (strcmp(str, "rnbqk..rpppp.ppp....pn...........b.P......N.PN..PPP..PPPR.BQK..R") != 0) {
+    if (strcmp(str,
+               "rnbqk..rpppp.ppp....pn...........b.P......N.PN..PPP..PPPR.BQK.."
+               "R") != 0) {
         printf("Test failed: Some arbitrary position\n");
         return;
     }
@@ -68,7 +76,9 @@ void test_ChessBoard_str(void) {
     // Test Case 3: An empty board
     ChessBoard_from_FEN(&board, "8/8/8/8/8/8/8/8 w - - 0 1");
     ChessBoard_str(&board, str);
-    if (strcmp(str, "................................................................") != 0) {
+    if (strcmp(str,
+               "..............................................................."
+               ".") != 0) {
         printf("Test failed: An empty board\n");
         return;
     }
@@ -81,25 +91,34 @@ void test_ChessBoard_to_FEN(void) {
     char fen[128];
 
     // Test Case 1: Starting Position
-    ChessBoard_from_FEN(&board, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    ChessBoard_from_FEN(
+        &board, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     ChessBoard_to_FEN(&board, fen);
-    if (strcmp(fen, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1") != 0) {
+    if (strcmp(fen,
+               "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1") !=
+        0) {
         printf("Test Case 1 failed.\n");
         return;
     }
 
     // Test Case 2: Some arbitrary position
-    ChessBoard_from_FEN(&board, "rnbqk2r/pppp1ppp/4pn2/8/1b1P4/2N1PN2/PPP2PPP/R1BQK2R w KQkq - 0 1");
+    ChessBoard_from_FEN(
+        &board,
+        "rnbqk2r/pppp1ppp/4pn2/8/1b1P4/2N1PN2/PPP2PPP/R1BQK2R w KQkq - 0 1");
     ChessBoard_to_FEN(&board, fen);
-    if (strcmp(fen, "rnbqk2r/pppp1ppp/4pn2/8/1b1P4/2N1PN2/PPP2PPP/R1BQK2R w KQkq - 0 1") != 0) {
+    if (strcmp(fen,
+               "rnbqk2r/pppp1ppp/4pn2/8/1b1P4/2N1PN2/PPP2PPP/R1BQK2R w KQkq - "
+               "0 1") != 0) {
         printf("Test Case 2 failed.\n");
         return;
     }
 
     // Test Case 3: No castling rights and no en passant target square
-    ChessBoard_from_FEN(&board, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b - - 0 1");
+    ChessBoard_from_FEN(
+        &board, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b - - 0 1");
     ChessBoard_to_FEN(&board, fen);
-    if (strcmp(fen, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b - - 0 1") != 0) {
+    if (strcmp(fen, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b - - 0 1") !=
+        0) {
         printf("Test Case 3 failed.\n");
         return;
     }
@@ -129,16 +148,19 @@ int compare_move_lists(U64 *expected, U64 *actual, int n) {
 
 void test_single_pawn_pushes(void) {
     ChessBoard board;
-	U64 pawn_moves;
+    U64 pawn_moves;
     U64 moves[256] = {0};
     int move_p = 0;
 
     // Test 1: White to move, pawns at the initial position
-    ChessBoard_from_FEN(&board, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    ChessBoard_from_FEN(
+        &board, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     // move_p += single_pawn_pushes(&board, moves, move_p);
-	pawn_moves = get_pawn_moves(&board, SINGLE_PUSH);
-	move_p += extract_pawn_moves(&board, moves, move_p, pawn_moves, SINGLE_PUSH);
-    char *expected_uci_1[] = {"a2a3", "b2b3", "c2c3", "d2d3", "e2e3", "f2f3", "g2g3", "h2h3"};
+    pawn_moves = get_pawn_moves(&board, SINGLE_PUSH);
+    move_p +=
+        extract_pawn_moves(&board, moves, move_p, pawn_moves, SINGLE_PUSH);
+    char *expected_uci_1[] = {"a2a3", "b2b3", "c2c3", "d2d3",
+                              "e2e3", "f2f3", "g2g3", "h2h3"};
     U64 expected_moves_1[8];
     for (int i = 0; i < 8; i++) {
         expected_moves_1[i] = move_from_uci(&board, expected_uci_1[i]);
@@ -151,10 +173,13 @@ void test_single_pawn_pushes(void) {
     // Test 2: Black to move, pawns at the initial position
     memset(moves, 0, sizeof(moves));
     move_p = 0;
-    ChessBoard_from_FEN(&board, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1");
-	pawn_moves = get_pawn_moves(&board, SINGLE_PUSH);
-	move_p += extract_pawn_moves(&board, moves, move_p, pawn_moves, SINGLE_PUSH);
-    char *expected_uci_2[] = {"a7a6", "b7b6", "c7c6", "d7d6", "e7e6", "f7f6", "g7g6", "h7h6"};
+    ChessBoard_from_FEN(
+        &board, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1");
+    pawn_moves = get_pawn_moves(&board, SINGLE_PUSH);
+    move_p +=
+        extract_pawn_moves(&board, moves, move_p, pawn_moves, SINGLE_PUSH);
+    char *expected_uci_2[] = {"a7a6", "b7b6", "c7c6", "d7d6",
+                              "e7e6", "f7f6", "g7g6", "h7h6"};
     U64 expected_moves_2[8];
     for (int i = 0; i < 8; i++) {
         expected_moves_2[i] = move_from_uci(&board, expected_uci_2[i]);
@@ -168,8 +193,9 @@ void test_single_pawn_pushes(void) {
     memset(moves, 0, sizeof(moves));
     move_p = 0;
     ChessBoard_from_FEN(&board, "8/8/4pP2/2P1P3/1p1p4/8/8/8 w - - 0 1");
-	pawn_moves = get_pawn_moves(&board, SINGLE_PUSH);
-	move_p += extract_pawn_moves(&board, moves, move_p, pawn_moves, SINGLE_PUSH);
+    pawn_moves = get_pawn_moves(&board, SINGLE_PUSH);
+    move_p +=
+        extract_pawn_moves(&board, moves, move_p, pawn_moves, SINGLE_PUSH);
     char *expected_uci_3[] = {"c5c6", "f6f7"};
     U64 expected_moves_3[2];
     for (int i = 0; i < 2; i++) {
@@ -180,12 +206,14 @@ void test_single_pawn_pushes(void) {
         return;
     }
 
-    // Test 4: Custom board setup with white and black pawns in odd locations (black's turn)
+    // Test 4: Custom board setup with white and black pawns in odd locations
+    // (black's turn)
     memset(moves, 0, sizeof(moves));
     move_p = 0;
     ChessBoard_from_FEN(&board, "8/8/4pP2/2P1P3/1p1p4/8/8/8 b - - 0 1");
-	pawn_moves = get_pawn_moves(&board, SINGLE_PUSH);
-	move_p += extract_pawn_moves(&board, moves, move_p, pawn_moves, SINGLE_PUSH);
+    pawn_moves = get_pawn_moves(&board, SINGLE_PUSH);
+    move_p +=
+        extract_pawn_moves(&board, moves, move_p, pawn_moves, SINGLE_PUSH);
     char *expected_uci_4[] = {"d4d3", "b4b3"};
     U64 expected_moves_4[2];
     for (int i = 0; i < 2; i++) {
@@ -214,8 +242,7 @@ void test_gen_occupancy_rook(void) {
         "10000000"
         "10000000"
         "10000000"
-        "00000000"
-    );
+        "00000000");
     if (rook_table.occupancy_mask[63] != expected) {
         printf("Test 1 failed.\n");
         return;
@@ -230,8 +257,7 @@ void test_gen_occupancy_rook(void) {
         "01101110"
         "00010000"
         "00010000"
-        "00000000"
-    );
+        "00000000");
     if (rook_table.occupancy_mask[28] != expected) {
         printf("Test 2 failed.\n");
         return;
@@ -250,8 +276,7 @@ void test_manual_gen_rook_moves(void) {
         "00001000"
         "00000000"
         "00000000"
-        "00000000"
-    );
+        "00000000");
     U64 expected = make_bitboard(
         "00001000"
         "00001000"
@@ -260,8 +285,7 @@ void test_manual_gen_rook_moves(void) {
         "11110111"
         "00001000"
         "00001000"
-        "00001000"
-    );
+        "00001000");
     U64 result = manual_gen_rook_moves(bb, 27);
     if (result != expected) {
         printf("Test 1 failed.\n");
@@ -277,8 +301,7 @@ void test_manual_gen_rook_moves(void) {
         "00001000"
         "00000000"
         "00000000"
-        "00000000"
-    );
+        "00000000");
     expected = make_bitboard(
         "00000000"
         "00000000"
@@ -287,8 +310,7 @@ void test_manual_gen_rook_moves(void) {
         "11101000"
         "00010000"
         "00010000"
-        "00010000"
-    );
+        "00010000");
     result = manual_gen_rook_moves(bb, 28);
     if (result != expected) {
         printf("Test 2 failed.\n");
@@ -312,8 +334,7 @@ void test_init_magic_rook(void) {
         "00000000"
         "00000000"
         "00000000"
-        "00000000"
-    );
+        "00000000");
     U64 expected1 = make_bitboard(
         "00001000"
         "00001000"
@@ -322,8 +343,7 @@ void test_init_magic_rook(void) {
         "11110111"
         "00001000"
         "00001000"
-        "00001000"
-    );
+        "00001000");
     int sq = 27;
     int ind1 = (occupancy1 * magic_table.magic[sq]) >> 52;
     U64 magic_moves1 = magic_table.move[4096 * sq + ind1];
@@ -340,8 +360,7 @@ void test_init_magic_rook(void) {
         "00001000"
         "00000000"
         "00000000"
-        "00000000"
-    );
+        "00000000");
     U64 expected2 = make_bitboard(
         "00000000"
         "00000000"
@@ -350,8 +369,7 @@ void test_init_magic_rook(void) {
         "11101000"
         "00010000"
         "00010000"
-        "00010000"
-    );
+        "00010000");
     int ind2 = (occupancy2 * magic_table.magic[28]) >> 52;
     U64 magic_moves2 = magic_table.move[4096 * 28 + ind2];
     if (magic_moves2 != expected2) {
