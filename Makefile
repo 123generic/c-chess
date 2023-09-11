@@ -2,14 +2,18 @@
 CC = gcc
 
 # Compiler flags
-CFLAGS = -Wall -Wextra -Werror -pedantic -std=c99 -g
+CFLAGS = -Wall -Wextra -Werror -Wshadow -Wfloat-equal \
+         -Wundef -Wformat=2 -Wswitch-default \
+		 -Wstrict-overflow=5 \
+		 -fsanitize=address -fsanitize=undefined \
+		 -pedantic -std=c99 -g
 
 # Target executable names
 CHESS_EXEC = chess
 TEST_EXEC = test_program
 
 # Source files
-CHESS_SRC = chess.c magic.c rng.c
+CHESS_SRC = board.c magic.c movegen.c rng.c
 TEST_SRC = test.c
 
 all: $(CHESS_SRC)

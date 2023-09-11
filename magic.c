@@ -8,7 +8,7 @@
 
 #include <string.h>
 
-#include "chess.h"
+#include "board.h"
 #include "rng.h"
 
 U64 rook_moves(ChessBoard *board, MagicTable *magic_table, int square) {
