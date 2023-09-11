@@ -322,53 +322,62 @@ U64 move_from_uci(ChessBoard *board, char *uci) {
 // move_p points to the end of the moves array
 // moves is assumed to be large enough to hold all moves (256)
 // TODO: Update to unified function for all pawn moves, colors
-int single_pawn_pushes(ChessBoard *board, U64 *moves, int move_p) {
-    U64 pawns, pushed_pawns;
-    U64 from, to, piece, captured;
-    U64 all_pieces = board->all_pieces;
-    int ind;
+U64 get_pawn_moves(ChessBoard *board, PawnMoveType move_type) {
+    U64 pawns, moved_pawns, rank_mask;
+    int wtm = board->white_to_move;
+
+    switch (move_type) {
+        case SINGLE_PUSH:
+            pawns = wtm ? board->white_pawns : board->black_pawns;
+
+            // no promotions
+            rank_mask = wtm ? RANK_7 : RANK_2;
+            moved_pawns = pawns & ~rank_mask;
+
+            // shift one rank up/down
+            moved_pawns = wtm ? moved_pawns << 8 : moved_pawns >> 8;
+
+            // don't push into pieces
+            moved_pawns = moved_pawns & ~board->all_pieces;
+            break;
+
+        default:
+            printf("Error: Unimplemented pawn move type [%s(%s):%d]\n",
+                __FILE__, __func__, __LINE__
+            );
+            exit(1);
+    }
+
+    return moved_pawns;
+}
+
+int extract_pawn_moves(ChessBoard *board, U64 *moves, int move_p, U64 pawn_moves, PawnMoveType move_type) {
+    int ind, to, from, piece, captured; 
     int num_moves = 0;
+    int wtm = board->white_to_move;
 
-    if (board->white_to_move) {
-        pawns = board->white_pawns;
-        pushed_pawns = pawns & ~RANK_7;    // no promotions
-        pushed_pawns = pushed_pawns << 8;  // shift one rank up
-        pushed_pawns = pushed_pawns & ~all_pieces;  // don't push into pieces
+    switch (move_type) {
+        case SINGLE_PUSH:
+            while ((ind = rightmost_set(pawn_moves)) != -1) {
+                // this means the move is ind + 8 -> ind
+                to = ind;
+                from = wtm ? ind - 8 : ind + 8;
+                piece = wtm ? WHITE_PAWN : BLACK_PAWN;
+                captured = EMPTY_SQ;
+                moves[move_p + num_moves] = from
+                                          | to << 6 
+                                          | piece << 12 
+                                          | captured << 16;
+                num_moves++;
+                BB_CLEAR(pawn_moves, ind);
+            }
+            break;
 
-        // Extracting moves
-        while ((ind = rightmost_set(pushed_pawns)) != -1) {
-            // this means the move is ind - 8 -> ind
-            from = ind - 8;
-            to = ind;
-            piece = WHITE_PAWN;
-            captured = EMPTY_SQ;
-            moves[move_p + num_moves] = from 
-                                      | to << 6 
-                                      | piece << 12 
-                                      | captured << 16;
-            num_moves++;
-            BB_CLEAR(pushed_pawns, ind);
-        }
-    } else {
-        pawns = board->black_pawns;
-        pushed_pawns = pawns & ~RANK_2;    // no promotions
-        pushed_pawns = pushed_pawns >> 8;  // shift one rank down
-        pushed_pawns = pushed_pawns & ~all_pieces;  // don't push into pieces
-
-        // Extracting moves
-        while ((ind = rightmost_set(pushed_pawns)) != -1) {
-            // this means the move is ind + 8 -> ind
-            from = ind + 8;
-            to = ind;
-            piece = BLACK_PAWN;
-            captured = EMPTY_SQ;
-            moves[move_p + num_moves] = from 
-                                      | to << 6 
-                                      | piece << 12 
-                                      | captured << 16;
-            num_moves++;
-            BB_CLEAR(pushed_pawns, ind);
-        }
+        default:
+            printf("Error: Unimplemented pawn move type [%s(%s):%d]\n",
+                __FILE__, __func__, __LINE__
+            );
+            exit(1);
     }
 
     return num_moves;
@@ -389,7 +398,7 @@ U64 get_rook_moves(ChessBoard* board, MagicTable* magic_table, int sq) {
 }
 
 int extract_rook_moves(U64 *moves, int move_p, U64 rook_moves, int sq, int wtm) {
-    int ind, to, piece, captured, num_moves;
+    int ind, to, piece, captured, num_moves = 0;
 
     while ((ind = rightmost_set(rook_moves)) != -1) {
         // this means the move is ind + 8 -> ind
@@ -403,4 +412,6 @@ int extract_rook_moves(U64 *moves, int move_p, U64 rook_moves, int sq, int wtm) 
         num_moves++;
         BB_CLEAR(rook_moves, ind);
     }
+
+	return -1; // TODO
 }

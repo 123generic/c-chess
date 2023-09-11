@@ -36,6 +36,10 @@ typedef uint64_t U64;
 #define BLACK_QUEEN 11
 #define BLACK_KING 12
 
+// board.white_to_move = 1 means we can do side = board.white_to_move in fn calls
+#define WHITE 1
+#define BLACK 0
+
 // Helper Macros
 #define BB_SQUARE(square) (1ULL << (square))
 #define BB_SET(bb, square) (bb |= BB_SQUARE(square))
@@ -98,9 +102,17 @@ void ChessBoard_to_FEN(ChessBoard *board, char *str);
 int ChessBoard_piece_at(ChessBoard *board, int ind);
 
 // Move generation
-// U64 single_pawn_push_bb(ChessBoard* board, int side);
-// U64 extract_single_pawn_push_
-int single_pawn_pushes(ChessBoard *board, U64 *moves, int move_p);
+typedef enum {
+    SINGLE_PUSH,
+    DOUBLE_PUSH,
+    CAPTURE,
+    EN_PASSANT,
+    PROMOTION,
+    PROMOTION_CAPTURE,
+} PawnMoveType;
+
+U64 get_pawn_moves(ChessBoard *board, PawnMoveType move_type);
+int extract_pawn_moves(ChessBoard *board, U64 *moves, int move_p, U64 pawn_moves, PawnMoveType move_type);
 U64 move_from_uci(ChessBoard *board, char *uci);
 
 // Magics

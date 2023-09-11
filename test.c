@@ -129,12 +129,15 @@ int compare_move_lists(U64 *expected, U64 *actual, int n) {
 
 void test_single_pawn_pushes(void) {
     ChessBoard board;
+	U64 pawn_moves;
     U64 moves[256] = {0};
     int move_p = 0;
 
     // Test 1: White to move, pawns at the initial position
     ChessBoard_from_FEN(&board, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-    move_p += single_pawn_pushes(&board, moves, move_p);
+    // move_p += single_pawn_pushes(&board, moves, move_p);
+	pawn_moves = get_pawn_moves(&board, SINGLE_PUSH);
+	move_p += extract_pawn_moves(&board, moves, move_p, pawn_moves, SINGLE_PUSH);
     char *expected_uci_1[] = {"a2a3", "b2b3", "c2c3", "d2d3", "e2e3", "f2f3", "g2g3", "h2h3"};
     U64 expected_moves_1[8];
     for (int i = 0; i < 8; i++) {
@@ -149,7 +152,8 @@ void test_single_pawn_pushes(void) {
     memset(moves, 0, sizeof(moves));
     move_p = 0;
     ChessBoard_from_FEN(&board, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1");
-    move_p += single_pawn_pushes(&board, moves, move_p);
+	pawn_moves = get_pawn_moves(&board, SINGLE_PUSH);
+	move_p += extract_pawn_moves(&board, moves, move_p, pawn_moves, SINGLE_PUSH);
     char *expected_uci_2[] = {"a7a6", "b7b6", "c7c6", "d7d6", "e7e6", "f7f6", "g7g6", "h7h6"};
     U64 expected_moves_2[8];
     for (int i = 0; i < 8; i++) {
@@ -164,7 +168,8 @@ void test_single_pawn_pushes(void) {
     memset(moves, 0, sizeof(moves));
     move_p = 0;
     ChessBoard_from_FEN(&board, "8/8/4pP2/2P1P3/1p1p4/8/8/8 w - - 0 1");
-    single_pawn_pushes(&board, moves, move_p);
+	pawn_moves = get_pawn_moves(&board, SINGLE_PUSH);
+	move_p += extract_pawn_moves(&board, moves, move_p, pawn_moves, SINGLE_PUSH);
     char *expected_uci_3[] = {"c5c6", "f6f7"};
     U64 expected_moves_3[2];
     for (int i = 0; i < 2; i++) {
@@ -179,7 +184,8 @@ void test_single_pawn_pushes(void) {
     memset(moves, 0, sizeof(moves));
     move_p = 0;
     ChessBoard_from_FEN(&board, "8/8/4pP2/2P1P3/1p1p4/8/8/8 b - - 0 1");
-    single_pawn_pushes(&board, moves, move_p);
+	pawn_moves = get_pawn_moves(&board, SINGLE_PUSH);
+	move_p += extract_pawn_moves(&board, moves, move_p, pawn_moves, SINGLE_PUSH);
     char *expected_uci_4[] = {"d4d3", "b4b3"};
     U64 expected_moves_4[2];
     for (int i = 0; i < 2; i++) {
