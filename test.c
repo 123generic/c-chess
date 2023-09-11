@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "chess.h"
+#include "board.h"
+#include "magic.h"
+#include "movegen.h"
 #include "rng.h"
 
 // Tests
@@ -382,6 +384,33 @@ void test_init_magic_rook(void) {
     printf("test_init_magic_rook: All tests passed.\n");
 }
 
+void test_extract_rook_moves(void) {
+    ChessBoard board;
+    U64 pawn_moves;
+    U64 moves[256] = {0};
+    int move_p = 0;
+
+    // Test 1: White to move, pawns at the initial position
+    ChessBoard_from_FEN(
+        &board, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    // move_p += single_pawn_pushes(&board, moves, move_p);
+    pawn_moves = get_pawn_moves(&board, SINGLE_PUSH);
+    move_p +=
+        extract_pawn_moves(&board, moves, move_p, pawn_moves, SINGLE_PUSH);
+    char *expected_uci_1[] = {"a2a3", "b2b3", "c2c3", "d2d3",
+                              "e2e3", "f2f3", "g2g3", "h2h3"};
+    U64 expected_moves_1[8];
+    for (int i = 0; i < 8; i++) {
+        expected_moves_1[i] = move_from_uci(&board, expected_uci_1[i]);
+    }
+    if (!compare_move_lists(expected_moves_1, moves, 8)) {
+        printf("Test 1 failed.\n");
+        return;
+    }
+
+    printf("test_extract_rook_moves: All tests passed.\n");
+}
+
 // Debugging with printf
 void debug_gen_occupancy_rook(void) {
     MagicTable magic_table = {0};
@@ -430,7 +459,7 @@ void debug_print(void) {
 int main(void) {
     init_genrand64(0x8c364d19345930e2);  // drawn on random day
 
-    debug_print();
+    // debug_print();
     unit_test();
     return 0;
 }

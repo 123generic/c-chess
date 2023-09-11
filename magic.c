@@ -4,6 +4,8 @@
  * - https://analog-hors.github.io/site/magic-bitboards/
  */
 
+#include "magic.h"
+
 #include <string.h>
 
 #include "chess.h"
