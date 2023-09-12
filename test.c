@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "board.h"
@@ -386,26 +387,101 @@ void test_init_magic_rook(void) {
 
 void test_extract_rook_moves(void) {
     ChessBoard board;
-    U64 pawn_moves;
     U64 moves[256] = {0};
     int move_p = 0;
+    MagicTable magic_table = {0};
 
-    // Test 1: White to move, pawns at the initial position
+    init_magics_rook(&magic_table);
+
+    // Test 1
     ChessBoard_from_FEN(
-        &board, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-    // move_p += single_pawn_pushes(&board, moves, move_p);
-    pawn_moves = get_pawn_moves(&board, SINGLE_PUSH);
-    move_p +=
-        extract_pawn_moves(&board, moves, move_p, pawn_moves, SINGLE_PUSH);
-    char *expected_uci_1[] = {"a2a3", "b2b3", "c2c3", "d2d3",
-                              "e2e3", "f2f3", "g2g3", "h2h3"};
-    U64 expected_moves_1[8];
-    for (int i = 0; i < 8; i++) {
+        &board,
+        "3B4/2R1p1Q1/1PRp1P1P/2pkb3/pp1r2P1/3p1N1P/r1nnP3/6K1 w - - 0 1");
+
+    move_p += extract_rook_moves(&board, &magic_table, moves, move_p);
+
+    char *expected_uci_1[] = {"c6c5", "c6d6", "c7a7", "c7b7",
+                              "c7d7", "c7e7", "c7c8"};
+    const size_t len = sizeof(expected_uci_1) / sizeof(expected_uci_1[0]);
+    U64 expected_moves_1[len];
+    for (size_t i = 0; i < len; i++) {
         expected_moves_1[i] = move_from_uci(&board, expected_uci_1[i]);
     }
-    if (!compare_move_lists(expected_moves_1, moves, 8)) {
-        printf("Test 1 failed.\n");
+
+    if (!compare_move_lists(expected_moves_1, moves, len)) {
+        printf("[%s %s:%d] Test 1 failed.\n", __func__, __FILE__, __LINE__);
         return;
+    }
+
+    // Test 2
+    memset(moves, 0, sizeof(moves));
+    move_p = 0;
+
+    ChessBoard_from_FEN(
+        &board, "3k4/pq4bp/1pppK3/2P2P2/p6R/PRpB1b2/PP2Q1P1/3nn3 w - - 0 1");
+
+    move_p += extract_rook_moves(&board, &magic_table, moves, move_p);
+
+    char expected_uci_2[][5] = {"b3b4", "b3b5", "b3b6", "b3c3", "h4h1", "h4h2",
+                                "h4h3", "h4h5", "h4h6", "h4h7", "h4a4", "h4b4",
+                                "h4c4", "h4d4", "h4e4", "h4f4", "h4g4"};
+    char actual_uci_2[sizeof(expected_uci_2) / sizeof(expected_uci_2[0])][5];
+
+    for (int i = 0; i < move_p; i++) {
+        move_to_uci(moves[i], actual_uci_2[i]);
+    }
+
+    const size_t len2 = sizeof(expected_uci_2) / sizeof(expected_uci_2[0]);
+    if (move_p != len2) {
+        printf("[%s %s:%d] Test 2 failed.\n", __func__, __FILE__, __LINE__);
+        return;
+    }
+
+    qsort(expected_uci_2, len2, sizeof(expected_uci_2[0]),
+          (int (*)(const void *, const void *))strcmp);
+    qsort(actual_uci_2, len2, sizeof(actual_uci_2[0]),
+          (int (*)(const void *, const void *))strcmp);
+
+    for (size_t i = 0; i < len2; i++) {
+        if (strcmp(expected_uci_2[i], actual_uci_2[i]) != 0) {
+            printf("[%s %s:%d] Test 2 failed.\n", __func__, __FILE__, __LINE__);
+            return;
+        }
+    }
+
+    // Test 3
+    memset(moves, 0, sizeof(moves));
+    move_p = 0;
+
+    ChessBoard_from_FEN(
+        &board, "N2K4/2p2pNP/2Q2pq1/6RP/3P2p1/1PPkb1p1/1pbB1p1P/r7 w - - 0 1");
+
+    move_p += extract_rook_moves(&board, &magic_table, moves, move_p);
+
+    char expected_uci_3[][5] = {"g5a5", "g5b5", "g5c5", "g5d5",
+                                "g5e5", "g5f5", "g5g4", "g5g6"};
+    char actual_uci_3[sizeof(expected_uci_3) / sizeof(expected_uci_3[0])][5];
+
+    for (int i = 0; i < move_p; i++) {
+        move_to_uci(moves[i], actual_uci_3[i]);
+    }
+
+    const size_t len3 = sizeof(expected_uci_3) / sizeof(expected_uci_3[0]);
+    if (move_p != len3) {
+        printf("[%s %s:%d] Test 2 failed.\n", __func__, __FILE__, __LINE__);
+        return;
+    }
+
+    qsort(expected_uci_3, len3, sizeof(expected_uci_3[0]),
+          (int (*)(const void *, const void *))strcmp);
+    qsort(actual_uci_3, len3, sizeof(actual_uci_3[0]),
+          (int (*)(const void *, const void *))strcmp);
+
+    for (size_t i = 0; i < len3; i++) {
+        if (strcmp(expected_uci_3[i], actual_uci_3[i]) != 0) {
+            printf("[%s %s:%d] Test 2 failed.\n", __func__, __FILE__, __LINE__);
+            return;
+        }
     }
 
     printf("test_extract_rook_moves: All tests passed.\n");
@@ -446,6 +522,7 @@ void unit_test(void) {
     test_gen_occupancy_rook();
     test_manual_gen_rook_moves();
     test_init_magic_rook();
+    test_extract_rook_moves();
 }
 
 void debug_print(void) {

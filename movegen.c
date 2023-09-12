@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "board.h"
 #include "magic.h"
 
 // Move generation
@@ -28,6 +29,19 @@ U64 move_from_uci(ChessBoard *board, char *uci) {
         exit(1);
     }
     return from | to << 6 | piece << 12 | captured << 16 | UNKNOWN << 20;
+}
+
+// uci must have length 4+1 (or more)
+void move_to_uci(U64 move, char *uci) {
+	int from, to;
+	from = move & 0x3f;
+	to = (move >> 6) & 0x3f;
+
+	uci[0] = 'a' + 7 - (from % 8);
+	uci[1] = '1' + (from / 8);
+	uci[2] = 'a' + 7 - (to % 8);
+	uci[3] = '1' + (to / 8);
+	uci[4] = '\0';
 }
 
 // move_p points to the end of the moves array
@@ -91,8 +105,8 @@ int extract_pawn_moves(ChessBoard *board, U64 *moves, int move_p,
 }
 
 // board[sq] should, of course, have a rook on it
-U64 get_rook_moves(ChessBoard *board, MagicTable *magic_table, int sq) {
-    U64 pieces, mask, magic, moves;
+U64 get_rook_moves_sq(ChessBoard *board, MagicTable *magic_table, int sq) {
+    U64 pieces, mask, magic, moves, friendlies;
     int ind;
 
     pieces = board->all_pieces;
@@ -101,11 +115,14 @@ U64 get_rook_moves(ChessBoard *board, MagicTable *magic_table, int sq) {
     ind = ((pieces & mask) * magic) >> 52;
 
     moves = magic_table->move[4096 * sq + ind];
-    return moves;
+
+	friendlies = board->white_to_move ? board->white_pieces : board->black_pieces;
+	moves &= ~friendlies;
+	return moves;
 }
 
-int extract_rook_moves(ChessBoard *board, U64 *moves, int move_p,
-                       U64 rook_moves, int sq) {
+int extract_rook_moves_sq(ChessBoard *board, U64 *moves, int move_p,
+                          U64 rook_moves, int sq) {
     int ind, to, piece, captured;
     int wtm = board->white_to_move;
     int num_moves = 0;
@@ -119,6 +136,24 @@ int extract_rook_moves(ChessBoard *board, U64 *moves, int move_p,
             sq | to << 6 | piece << 12 | captured << 16 | SLIDE << 20;
         num_moves++;
         BB_CLEAR(rook_moves, ind);
+    }
+
+    return num_moves;
+}
+
+int extract_rook_moves(ChessBoard *board, MagicTable *magic_table, U64 *moves,
+                       int move_p) {
+    int sq;
+    int num_moves = 0;
+    U64 rook_moves;
+    U64 bb = board->white_to_move ? board->white_rooks : board->black_rooks;
+
+	while ((sq = rightmost_set(bb)) != -1) {
+        rook_moves = get_rook_moves_sq(board, magic_table, sq);
+        num_moves +=
+            extract_rook_moves_sq(board, moves, move_p + num_moves, rook_moves, sq);
+
+		BB_CLEAR(bb, sq);
     }
 
     return num_moves;

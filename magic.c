@@ -77,14 +77,14 @@ U64 manual_gen_rook_moves(U64 bb, int square) {
     }
 
     // East
-    for (cell = square - 1; 0 < cell && cell / 8 == square / 8; cell--) {
+    for (cell = square - 1; 0 <= cell && cell / 8 == square / 8; cell--) {
         should_break = BB_GET(bb, cell) != 0;
         BB_SET(moves, cell);
         if (should_break) break;
     }
 
     // South
-    for (cell = square - 8; 0 < cell && cell % 8 == square % 8; cell -= 8) {
+    for (cell = square - 8; 0 <= cell && cell % 8 == square % 8; cell -= 8) {
         should_break = BB_GET(bb, cell) != 0;
         BB_SET(moves, cell);
         if (should_break) break;
