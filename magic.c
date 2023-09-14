@@ -170,23 +170,28 @@ void gen_occupancy_bishop(MagicTable *magic_table) {
         // North-West
         for (cell = sq + 9; cell < 64 &&          // bounds
                             cell % 8 > sq % 8 &&  // column restriction
-                            cell / 8 > sq / 8;    // row restriction
+                            cell / 8 > sq / 8 &&  // row restriction
+                            cell % 8 != 7 &&      // column boundary
+                            cell / 8 != 7;        // row boundary
              cell += 9)
             BB_SET(bb, cell);
 
         // North-East
-        for (cell = sq + 7; cell < 64 && cell % 8 < sq % 8 && cell / 8 > sq / 8;
+        for (cell = sq + 7; cell < 64 && cell % 8 < sq % 8 &&
+                            cell / 8 > sq / 8 && cell % 8 != 0 && cell / 8 != 7;
              cell += 7)
             BB_SET(bb, cell);
 
         // South-East
-        for (cell = sq - 9; cell >= 0 && cell % 8 < sq % 8 && cell / 8 < sq / 8;
+        for (cell = sq - 9; cell >= 0 && cell % 8 < sq % 8 &&
+                            cell / 8 < sq / 8 && cell % 8 != 0 && cell / 8 != 0;
              cell -= 9)
             BB_SET(bb, cell);
 
         // West
-        for (cell = sq - 7; cell >= 0 && cell % 8 > sq % 8 && cell / 8 < sq / 8;
-             cell++)
+        for (cell = sq - 7; cell >= 0 && cell % 8 > sq % 8 &&
+                            cell / 8 < sq / 8 && cell % 8 != 7 && cell / 8 != 0;
+             cell -= 7)
             BB_SET(bb, cell);
 
         mask[sq] = bb;
@@ -224,7 +229,7 @@ U64 manual_gen_bishop_moves(U64 bb, int sq) {
 
     // South-West
     for (cell = sq - 7; cell >= 0 && cell % 8 > sq % 8 && cell / 8 < sq / 8;
-         cell++) {
+         cell -= 7) {
         should_break = BB_GET(bb, cell) != 0;
         BB_SET(moves, cell);
         if (should_break) break;

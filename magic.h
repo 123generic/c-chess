@@ -27,7 +27,4 @@ void gen_occupancy_bishop(MagicTable *magic_table);
 U64 manual_gen_bishop_moves(U64 bb, int square);
 void fill_bishop_moves(U64 *move, U64 occupancy_mask, U64 magic, int sq);
 
-// TODO
-// void gen_occupancy_bishop(MagicTable *magic_table);
-
 #endif  // MAGIC_H

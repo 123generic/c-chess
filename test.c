@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "board.h"
+#include "common.h"
 #include "magic.h"
 #include "movegen.h"
 #include "rng.h"
@@ -325,6 +326,117 @@ void test_manual_gen_rook_moves(void) {
     printf("test_manual_gen_rook_moves: All tests passed.\n");
 }
 
+void test_gen_occupancy_bishop(void) {
+    U64 expected;
+    MagicTable bishop_table = {0};
+
+    gen_occupancy_bishop(&bishop_table);
+
+    // Test 1
+    expected = make_bitboard(
+        "00000000"
+        "00001010"
+        "00000000"
+        "00001010"
+        "00010000"
+        "00100000"
+        "01000000"
+        "00000000");
+    if (bishop_table.occupancy_mask[42] != expected) {
+        printf("[%s %s:%d] Test 1 failed.\n", __func__, __FILE__, __LINE__);
+        return;
+    }
+
+    // Test 2
+    expected = make_bitboard(
+        "00000000"
+        "00000010"
+        "00000100"
+        "00001000"
+        "00010000"
+        "00100000"
+        "01000000"
+        "00000000");
+    if (bishop_table.occupancy_mask[7] != expected &&
+        bishop_table.occupancy_mask[56] != expected) {
+        printf("[%s %s:%d] Test 2 failed.\n", __func__, __FILE__, __LINE__);
+        return;
+    }
+
+	// Test 3
+    expected = make_bitboard(
+        "00000000"
+        "00100000"
+        "01000000"
+        "00000000"
+        "01000000"
+        "00100000"
+        "00010000"
+        "00000000");
+    if (bishop_table.occupancy_mask[39] != expected) {
+        printf("[%s %s:%d] Test 3 failed.\n", __func__, __FILE__, __LINE__);
+        return;
+    }
+
+	printf("test_gen_occupancy_bishop: All tests passed.\n");
+}
+
+void test_manual_gen_bishop_moves(void) {
+	U64 bb, expected, result;
+
+    // Test 1
+    bb = make_bitboard(
+        "00000000"
+        "00000000"
+        "00000000"
+        "00000000"
+        "00001000"
+        "00000000"
+        "00000000"
+        "00000000");
+    expected = make_bitboard(
+        "10000000"
+        "01000001"
+        "00100010"
+        "00010100"
+        "00000000"
+        "00010100"
+        "00100010"
+        "01000001");
+    result = manual_gen_bishop_moves(bb, 27);
+    if (result != expected) {
+        printf("[%s %s:%d] Test 1 failed.\n", __func__, __FILE__, __LINE__);
+        return;
+    }
+
+    // Test 2
+    bb = make_bitboard(
+        "00000000"
+        "00000000"
+        "00011000"
+        "00010000"
+        "00001000"
+        "00000000"
+        "00000000"
+        "00000000");
+    expected = make_bitboard(
+        "10001000"
+        "01010000"
+        "00000000"
+        "01010000"
+        "10000000"
+        "00000000"
+        "00000000"
+        "00000000");
+    result = manual_gen_bishop_moves(bb, 45);
+    if (result != expected) {
+        printf("[%s %s:%d] Test 2 failed.\n", __func__, __FILE__, __LINE__);
+        return;
+    }
+
+	printf("test_manual_gen_bishop_moves: All tests passed.\n");
+}
+
 void test_init_magic_rook(void) {
     MagicTable magic_table;
     init_magics(&magic_table, rook);
@@ -521,6 +633,8 @@ void unit_test(void) {
     test_extract_pawn_moves();
     test_gen_occupancy_rook();
     test_manual_gen_rook_moves();
+    test_gen_occupancy_bishop();
+    test_manual_gen_bishop_moves();
     test_init_magic_rook();
     test_extract_magic_moves_rook();
 }
