@@ -363,7 +363,7 @@ void test_gen_occupancy_bishop(void) {
         return;
     }
 
-	// Test 3
+    // Test 3
     expected = make_bitboard(
         "00000000"
         "00100000"
@@ -378,11 +378,11 @@ void test_gen_occupancy_bishop(void) {
         return;
     }
 
-	printf("test_gen_occupancy_bishop: All tests passed.\n");
+    printf("test_gen_occupancy_bishop: All tests passed.\n");
 }
 
 void test_manual_gen_bishop_moves(void) {
-	U64 bb, expected, result;
+    U64 bb, expected, result;
 
     // Test 1
     bb = make_bitboard(
@@ -434,7 +434,7 @@ void test_manual_gen_bishop_moves(void) {
         return;
     }
 
-	printf("test_manual_gen_bishop_moves: All tests passed.\n");
+    printf("test_manual_gen_bishop_moves: All tests passed.\n");
 }
 
 void test_init_magic_rook(void) {
@@ -498,67 +498,67 @@ void test_init_magic_rook(void) {
 }
 
 void test_init_magic_bishop(void) {
-	U64 occupancy, expected, magic_moves;
-	int sq, ind;
+    U64 occupancy, expected, magic_moves;
+    int sq, ind;
 
-	MagicTable magic_table;
-	init_magics(&magic_table, bishop);
+    MagicTable magic_table;
+    init_magics(&magic_table, bishop);
 
-	// Test 1
-	occupancy = make_bitboard(
-		"00000000"
-		"00000000"
-		"00000010"
-		"00000000"
-		"00001000"
-		"00000000"
-		"00000000"
-		"00000000");
-	expected = make_bitboard(
-		"00000000"
-		"00000000"
-		"10000000"
-		"01000000"
-		"00101000"
-		"00000000"
-		"00101000"
-		"01000100");
-	sq = 20;
-	ind = (occupancy * magic_table.magic[sq]) >> (64 - 9);
-	magic_moves = magic_table.move[512 * sq + ind];
-	if (magic_moves != expected) {
-		printf("[%s %s:%d] Test 1 failed.\n", __func__, __FILE__, __LINE__);
-		return;
-	}
+    // Test 1
+    occupancy = make_bitboard(
+        "00000000"
+        "00000000"
+        "00000010"
+        "00000000"
+        "00001000"
+        "00000000"
+        "00000000"
+        "00000000");
+    expected = make_bitboard(
+        "00000000"
+        "00000000"
+        "10000000"
+        "01000000"
+        "00101000"
+        "00000000"
+        "00101000"
+        "01000100");
+    sq = 20;
+    ind = (occupancy * magic_table.magic[sq]) >> (64 - 9);
+    magic_moves = magic_table.move[512 * sq + ind];
+    if (magic_moves != expected) {
+        printf("[%s %s:%d] Test 1 failed.\n", __func__, __FILE__, __LINE__);
+        return;
+    }
 
-	// Test 2
-	occupancy = make_bitboard(
-		"00000000"
-		"00000000"
-		"00100000"
-		"01000100"
-		"00000010"
-		"00000000"
-		"00000000"
-		"00000000");
-	expected = make_bitboard(
-		"00101000"
-		"00000000"
-		"00101000"
-		"00000100"
-		"00000000"
-		"00000000"
-		"00000000"
-		"00000000");
-	sq = 52;
-	ind = (occupancy * magic_table.magic[sq]) >> (64 - 9);
-	magic_moves = magic_table.move[512 * sq + ind];
-	if (magic_moves != expected) {
-		printf("[%s %s:%d] Test 1 failed.\n", __func__, __FILE__, __LINE__);
-		return;
-	}
+    // Test 2
+    occupancy = make_bitboard(
+        "00000000"
+        "00000000"
+        "00100000"
+        "01000100"
+        "00000010"
+        "00000000"
+        "00000000"
+        "00000000");
+    expected = make_bitboard(
+        "00101000"
+        "00000000"
+        "00101000"
+        "00000100"
+        "00000000"
+        "00000000"
+        "00000000"
+        "00000000");
+    sq = 52;
+    ind = (occupancy * magic_table.magic[sq]) >> (64 - 9);
+    magic_moves = magic_table.move[512 * sq + ind];
+    if (magic_moves != expected) {
+        printf("[%s %s:%d] Test 1 failed.\n", __func__, __FILE__, __LINE__);
+        return;
+    }
 
-	printf("test_init_magic_bishop: All tests passed.\n");
+    printf("test_init_magic_bishop: All tests passed.\n");
 }
 
 void test_extract_magic_moves_rook(void) {
@@ -663,6 +663,85 @@ void test_extract_magic_moves_rook(void) {
     printf("test_extract_magic_moves_rook: All tests passed.\n");
 }
 
+void test_extract_magic_moves_bishop(void) {
+    ChessBoard board;
+    U64 moves[256] = {0};
+    int move_p = 0;
+    MagicTable magic_table = {0};
+
+    init_magics(&magic_table, bishop);
+
+    // Test 1
+    memset(moves, 0, sizeof(moves));
+	move_p = 0;
+    ChessBoard_from_FEN(
+        &board, "6N1/5RKP/BbPP4/6P1/pR1n2qn/p1B1p3/Q1Pp3r/N1r4k w - - 0 1");
+
+    move_p += extract_magic_moves(&board, &magic_table, moves, move_p, bishop);
+
+    char expected_uci_1[][5] = {"a6b7", "a6c8", "a6b5", "a6c4", "a6d3",
+                                "a6e2", "a6f1", "c3d4", "c3d2", "c3b2"};
+    char actual_uci_1[sizeof(expected_uci_1) / sizeof(expected_uci_1[0])][5];
+
+    for (int i = 0; i < move_p; i++) {
+        move_to_uci(moves[i], actual_uci_1[i]);
+    }
+
+    const size_t len1 = sizeof(expected_uci_1) / sizeof(expected_uci_1[0]);
+    if (move_p != len1) {
+        printf("[%s %s:%d] Test 1 failed.\n", __func__, __FILE__, __LINE__);
+        return;
+    }
+
+    qsort(expected_uci_1, len1, sizeof(expected_uci_1[0]),
+          (int (*)(const void *, const void *))strcmp);
+    qsort(actual_uci_1, len1, sizeof(actual_uci_1[0]),
+          (int (*)(const void *, const void *))strcmp);
+
+    for (size_t i = 0; i < len1; i++) {
+        if (strcmp(expected_uci_1[i], actual_uci_1[i]) != 0) {
+            printf("[%s %s:%d] Test 1 failed.\n", __func__, __FILE__, __LINE__);
+            return;
+        }
+    }
+
+	// Test 2
+    memset(moves, 0, sizeof(moves));
+	move_p = 0;
+    ChessBoard_from_FEN(
+        &board, "7b/P3QKpk/1rPq2n1/1b6/pB3p1p/p4p1N/PP1p1rP1/3B4 b - - 0 1");
+
+    move_p += extract_magic_moves(&board, &magic_table, moves, move_p, bishop);
+
+    char expected_uci_2[][5] = {"b5a6", "b5c6", "b5c4", "b5d3", "b5e2", "b5f1"};
+    char actual_uci_2[sizeof(expected_uci_2) / sizeof(expected_uci_2[0])][5];
+
+    const size_t len2 = sizeof(expected_uci_2) / sizeof(expected_uci_2[0]);
+    if (move_p != len2) {
+        printf("[%s %s:%d] Test 1 failed.\n", __func__, __FILE__, __LINE__);
+        return;
+    }
+
+    for (int i = 0; i < move_p; i++) {
+        move_to_uci(moves[i], actual_uci_2[i]);
+    }
+
+
+    qsort(expected_uci_2, len2, sizeof(expected_uci_2[0]),
+          (int (*)(const void *, const void *))strcmp);
+    qsort(actual_uci_2, len2, sizeof(actual_uci_2[0]),
+          (int (*)(const void *, const void *))strcmp);
+
+    for (size_t i = 0; i < len2; i++) {
+        if (strcmp(expected_uci_2[i], actual_uci_2[i]) != 0) {
+            printf("[%s %s:%d] Test 1 failed.\n", __func__, __FILE__, __LINE__);
+            return;
+        }
+    }
+
+    printf("test_extract_magic_moves_bishop: All tests passed.\n");
+}
+
 // Debugging with printf
 void debug_gen_occupancy_rook(void) {
     MagicTable magic_table = {0};
@@ -692,16 +771,23 @@ void debug_find_magic_rook(void) {
 
 void unit_test(void) {
     test_rightmost_set();
+
     test_ChessBoard_str();
     test_ChessBoard_to_FEN();
+
     test_extract_pawn_moves();
+
     test_gen_occupancy_rook();
     test_manual_gen_rook_moves();
+
     test_gen_occupancy_bishop();
     test_manual_gen_bishop_moves();
+
     test_init_magic_rook();
-	test_init_magic_bishop();
+    test_init_magic_bishop();
+
     test_extract_magic_moves_rook();
+    test_extract_magic_moves_bishop();
 }
 
 void debug_print(void) {

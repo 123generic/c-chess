@@ -112,11 +112,15 @@ U64 get_magic_moves_sq(ChessBoard *board, MagicTable *magic_table, int sq,
     shift_amt = piece == rook ? (64 - 12) : (64 - 9);
     ind = ((pieces & mask) * magic) >> shift_amt;
 
-    moves = magic_table->move[4096 * sq + ind];
+	if (piece == rook) {
+    	moves = magic_table->move[4096 * sq + ind];
+	} else {
+		moves = magic_table->move[512 * sq + ind];
+	}
 
     friendlies =
         board->white_to_move ? board->white_pieces : board->black_pieces;
-    moves &= ~friendlies;
+    moves &= (~friendlies);
     return moves;
 }
 

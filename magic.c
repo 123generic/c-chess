@@ -149,10 +149,11 @@ void init_magics(MagicTable *magic_table, Piece p) {
     }
 
     for (int i = 0; i < 64; i++) {
-        magic[i] = find_magic(mask, i, rook);
         if (p == rook) {
+        	magic[i] = find_magic(mask, i, rook);
             fill_rook_moves(move, mask[i], magic[i], i);
         } else {
+			magic[i] = find_magic(mask, i, bishop);
             fill_bishop_moves(move, mask[i], magic[i], i);
         }
     }
