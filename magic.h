@@ -13,12 +13,19 @@ typedef struct {
 extern MagicTable rook_magic;
 extern MagicTable bishop_magic;
 
+// Magic gen
+U64 find_magic(U64 *occupancy_mask_table, int sq, Piece p);
+void init_magics(MagicTable *magic_table, Piece p);
+
 // Rooks
 void gen_occupancy_rook(MagicTable *magic_table);
 U64 manual_gen_rook_moves(U64 bb, int square);
-U64 find_magic_rook(U64 *occupancy_mask_table, int sq);
 void fill_rook_moves(U64 *move, U64 occupancy_mask, U64 magic, int sq);
-void init_magics_rook(MagicTable *magic_table);
+
+// Bishops
+void gen_occupancy_bishop(MagicTable *magic_table);
+U64 manual_gen_bishop_moves(U64 bb, int square);
+void fill_bishop_moves(U64 *move, U64 occupancy_mask, U64 magic, int sq);
 
 // TODO
 // void gen_occupancy_bishop(MagicTable *magic_table);

@@ -327,7 +327,7 @@ void test_manual_gen_rook_moves(void) {
 
 void test_init_magic_rook(void) {
     MagicTable magic_table;
-    init_magics_rook(&magic_table);
+    init_magics(&magic_table, rook);
 
     // Test 1: Validate that the magic table produces the correct moves
     // for a rook on square 27 and square 28 for specific occupancy boards.
@@ -391,7 +391,7 @@ void test_extract_magic_moves_rook(void) {
     int move_p = 0;
     MagicTable magic_table = {0};
 
-    init_magics_rook(&magic_table);
+    init_magics(&magic_table, rook);
 
     // Test 1
     ChessBoard_from_FEN(
@@ -509,7 +509,7 @@ void debug_find_magic_rook(void) {
     gen_occupancy_rook(&magic_table);
 
     for (sq = 0; sq < 64; sq++) {
-        magic = find_magic_rook(magic_table.occupancy_mask, 0);
+        magic = find_magic(magic_table.occupancy_mask, 0, rook);
         printf("sq: %d, magic: %llu\n", sq, magic);
     }
 }
