@@ -385,7 +385,7 @@ void test_init_magic_rook(void) {
     printf("test_init_magic_rook: All tests passed.\n");
 }
 
-void test_extract_rook_moves(void) {
+void test_extract_magic_moves_rook(void) {
     ChessBoard board;
     U64 moves[256] = {0};
     int move_p = 0;
@@ -398,7 +398,7 @@ void test_extract_rook_moves(void) {
         &board,
         "3B4/2R1p1Q1/1PRp1P1P/2pkb3/pp1r2P1/3p1N1P/r1nnP3/6K1 w - - 0 1");
 
-    move_p += extract_rook_moves(&board, &magic_table, moves, move_p);
+    move_p += extract_magic_moves(&board, &magic_table, moves, move_p, rook);
 
     char *expected_uci_1[] = {"c6c5", "c6d6", "c7a7", "c7b7",
                               "c7d7", "c7e7", "c7c8"};
@@ -420,7 +420,7 @@ void test_extract_rook_moves(void) {
     ChessBoard_from_FEN(
         &board, "3k4/pq4bp/1pppK3/2P2P2/p6R/PRpB1b2/PP2Q1P1/3nn3 w - - 0 1");
 
-    move_p += extract_rook_moves(&board, &magic_table, moves, move_p);
+    move_p += extract_magic_moves(&board, &magic_table, moves, move_p, rook);
 
     char expected_uci_2[][5] = {"b3b4", "b3b5", "b3b6", "b3c3", "h4h1", "h4h2",
                                 "h4h3", "h4h5", "h4h6", "h4h7", "h4a4", "h4b4",
@@ -456,7 +456,7 @@ void test_extract_rook_moves(void) {
     ChessBoard_from_FEN(
         &board, "N2K4/2p2pNP/2Q2pq1/6RP/3P2p1/1PPkb1p1/1pbB1p1P/r7 w - - 0 1");
 
-    move_p += extract_rook_moves(&board, &magic_table, moves, move_p);
+    move_p += extract_magic_moves(&board, &magic_table, moves, move_p, rook);
 
     char expected_uci_3[][5] = {"g5a5", "g5b5", "g5c5", "g5d5",
                                 "g5e5", "g5f5", "g5g4", "g5g6"};
@@ -484,7 +484,7 @@ void test_extract_rook_moves(void) {
         }
     }
 
-    printf("test_extract_rook_moves: All tests passed.\n");
+    printf("test_extract_magic_moves_rook: All tests passed.\n");
 }
 
 // Debugging with printf
@@ -522,7 +522,7 @@ void unit_test(void) {
     test_gen_occupancy_rook();
     test_manual_gen_rook_moves();
     test_init_magic_rook();
-    test_extract_rook_moves();
+    test_extract_magic_moves_rook();
 }
 
 void debug_print(void) {

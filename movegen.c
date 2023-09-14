@@ -4,16 +4,10 @@
 #include <stdlib.h>
 
 #include "board.h"
+#include "common.h"
 #include "magic.h"
 
-// Move generation
-// moves are packed into a U64 (LSB -> MSB)
-// 0-5: from square
-// 6-11: to square
-// 12-15: piece
-// 16-19: capture piece
-// 20-23: move type
-
+// Utilities
 U64 move_from_uci(ChessBoard *board, char *uci) {
     // uci: rank-file rank-file [promotion]
     // TODO: promotion
@@ -33,17 +27,18 @@ U64 move_from_uci(ChessBoard *board, char *uci) {
 
 // uci must have length 4+1 (or more)
 void move_to_uci(U64 move, char *uci) {
-	int from, to;
-	from = move & 0x3f;
-	to = (move >> 6) & 0x3f;
+    int from, to;
+    from = move & 0x3f;
+    to = (move >> 6) & 0x3f;
 
-	uci[0] = 'a' + 7 - (from % 8);
-	uci[1] = '1' + (from / 8);
-	uci[2] = 'a' + 7 - (to % 8);
-	uci[3] = '1' + (to / 8);
-	uci[4] = '\0';
+    uci[0] = 'a' + 7 - (from % 8);
+    uci[1] = '1' + (from / 8);
+    uci[2] = 'a' + 7 - (to % 8);
+    uci[3] = '1' + (to / 8);
+    uci[4] = '\0';
 }
 
+// Pawn generation
 // move_p points to the end of the moves array
 // moves is assumed to be large enough to hold all moves (256)
 U64 get_pawn_moves(ChessBoard *board, MoveType move_type) {
@@ -104,56 +99,70 @@ int extract_pawn_moves(ChessBoard *board, U64 *moves, int move_p,
     return num_moves;
 }
 
+// Magic Generation
 // board[sq] should, of course, have a rook on it
-U64 get_rook_moves_sq(ChessBoard *board, MagicTable *magic_table, int sq) {
+U64 get_magic_moves_sq(ChessBoard *board, MagicTable *magic_table, int sq,
+                       Piece piece) {
     U64 pieces, mask, magic, moves, friendlies;
-    int ind;
+    int ind, shift_amt;
 
     pieces = board->all_pieces;
     mask = magic_table->occupancy_mask[sq];
     magic = magic_table->magic[sq];
-    ind = ((pieces & mask) * magic) >> 52;
+    shift_amt = piece == rook ? (64 - 12) : (64 - 9);
+    ind = ((pieces & mask) * magic) >> shift_amt;
 
     moves = magic_table->move[4096 * sq + ind];
 
-	friendlies = board->white_to_move ? board->white_pieces : board->black_pieces;
-	moves &= ~friendlies;
-	return moves;
+    friendlies =
+        board->white_to_move ? board->white_pieces : board->black_pieces;
+    moves &= ~friendlies;
+    return moves;
 }
 
-int extract_rook_moves_sq(ChessBoard *board, U64 *moves, int move_p,
-                          U64 rook_moves, int sq) {
+int extract_magic_moves_sq(ChessBoard *board, U64 *moves, int move_p,
+                           U64 magic_moves, int sq, Piece p) {
     int ind, to, piece, captured;
     int wtm = board->white_to_move;
     int num_moves = 0;
 
-    while ((ind = rightmost_set(rook_moves)) != -1) {
+    if (wtm) {
+        piece = p == rook ? WHITE_ROOK : WHITE_BISHOP;
+    } else {
+        piece = p == rook ? BLACK_ROOK : BLACK_BISHOP;
+    }
+
+    while ((ind = rightmost_set(magic_moves)) != -1) {
         // this means the move is ind + 8 -> ind
         to = ind;
-        piece = wtm ? WHITE_ROOK : BLACK_ROOK;
         captured = ChessBoard_piece_at(board, ind);
         moves[move_p + num_moves] =
             sq | to << 6 | piece << 12 | captured << 16 | SLIDE << 20;
         num_moves++;
-        BB_CLEAR(rook_moves, ind);
+        BB_CLEAR(magic_moves, ind);
     }
 
     return num_moves;
 }
 
-int extract_rook_moves(ChessBoard *board, MagicTable *magic_table, U64 *moves,
-                       int move_p) {
+int extract_magic_moves(ChessBoard *board, MagicTable *magic_table, U64 *moves,
+                        int move_p, Piece p) {
     int sq;
     int num_moves = 0;
-    U64 rook_moves;
-    U64 bb = board->white_to_move ? board->white_rooks : board->black_rooks;
+    U64 magic_moves, bb;
 
-	while ((sq = rightmost_set(bb)) != -1) {
-        rook_moves = get_rook_moves_sq(board, magic_table, sq);
-        num_moves +=
-            extract_rook_moves_sq(board, moves, move_p + num_moves, rook_moves, sq);
+    if (board->white_to_move) {
+        bb = p == rook ? board->white_rooks : board->white_bishops;
+    } else {
+        bb = p == rook ? board->black_rooks : board->black_bishops;
+    }
 
-		BB_CLEAR(bb, sq);
+    while ((sq = rightmost_set(bb)) != -1) {
+        magic_moves = get_magic_moves_sq(board, magic_table, sq, p);
+        num_moves += extract_magic_moves_sq(board, moves, move_p + num_moves,
+                                            magic_moves, sq, p);
+
+        BB_CLEAR(bb, sq);
     }
 
     return num_moves;

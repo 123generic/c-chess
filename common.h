@@ -44,4 +44,14 @@ typedef uint64_t U64;
 #define WHITE 1
 #define BLACK 0
 
+// Piece enum
+typedef enum {
+	pawn,
+	rook,
+	knight,
+	bishop,
+	queen,
+	king,
+} Piece;
+
 #endif  // COMMON_H
