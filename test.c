@@ -462,7 +462,7 @@ void test_init_magic_rook(void) {
         "00001000"
         "00001000");
     int sq = 27;
-    int ind1 = (occupancy1 * magic_table.magic[sq]) >> 52;
+    int ind1 = (occupancy1 * magic_table.magic[sq]) >> (64 - 12);
     U64 magic_moves1 = magic_table.move[4096 * sq + ind1];
     if (magic_moves1 != expected1) {
         printf("Test 1 failed for square 27.\n");
@@ -487,7 +487,7 @@ void test_init_magic_rook(void) {
         "00010000"
         "00010000"
         "00010000");
-    int ind2 = (occupancy2 * magic_table.magic[28]) >> 52;
+    int ind2 = (occupancy2 * magic_table.magic[28]) >> (64 - 12);
     U64 magic_moves2 = magic_table.move[4096 * 28 + ind2];
     if (magic_moves2 != expected2) {
         printf("Test 1 failed for square 28.\n");
@@ -495,6 +495,70 @@ void test_init_magic_rook(void) {
     }
 
     printf("test_init_magic_rook: All tests passed.\n");
+}
+
+void test_init_magic_bishop(void) {
+	U64 occupancy, expected, magic_moves;
+	int sq, ind;
+
+	MagicTable magic_table;
+	init_magics(&magic_table, bishop);
+
+	// Test 1
+	occupancy = make_bitboard(
+		"00000000"
+		"00000000"
+		"00000010"
+		"00000000"
+		"00001000"
+		"00000000"
+		"00000000"
+		"00000000");
+	expected = make_bitboard(
+		"00000000"
+		"00000000"
+		"10000000"
+		"01000000"
+		"00101000"
+		"00000000"
+		"00101000"
+		"01000100");
+	sq = 20;
+	ind = (occupancy * magic_table.magic[sq]) >> (64 - 9);
+	magic_moves = magic_table.move[512 * sq + ind];
+	if (magic_moves != expected) {
+		printf("[%s %s:%d] Test 1 failed.\n", __func__, __FILE__, __LINE__);
+		return;
+	}
+
+	// Test 2
+	occupancy = make_bitboard(
+		"00000000"
+		"00000000"
+		"00100000"
+		"01000100"
+		"00000010"
+		"00000000"
+		"00000000"
+		"00000000");
+	expected = make_bitboard(
+		"00101000"
+		"00000000"
+		"00101000"
+		"00000100"
+		"00000000"
+		"00000000"
+		"00000000"
+		"00000000");
+	sq = 52;
+	ind = (occupancy * magic_table.magic[sq]) >> (64 - 9);
+	magic_moves = magic_table.move[512 * sq + ind];
+	if (magic_moves != expected) {
+		printf("[%s %s:%d] Test 1 failed.\n", __func__, __FILE__, __LINE__);
+		return;
+	}
+
+	printf("test_init_magic_bishop: All tests passed.\n");
 }
 
 void test_extract_magic_moves_rook(void) {
@@ -636,6 +700,7 @@ void unit_test(void) {
     test_gen_occupancy_bishop();
     test_manual_gen_bishop_moves();
     test_init_magic_rook();
+	test_init_magic_bishop();
     test_extract_magic_moves_rook();
 }
 

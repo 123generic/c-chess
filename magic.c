@@ -244,7 +244,7 @@ void fill_bishop_moves(U64 *move, U64 occupancy_mask, U64 magic, int sq) {
     while (1) {
         int ind = (subset * magic) >> (64 - 9);
         U64 mv = manual_gen_bishop_moves(subset, sq);
-        move[4096 * sq + ind] = mv;
+        move[512 * sq + ind] = mv;
 
         subset = (subset - occupancy_mask) & occupancy_mask;
         if (subset == 0) break;

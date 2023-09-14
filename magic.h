@@ -5,13 +5,14 @@
 #include "common.h"
 
 // Magics
+/*
+ * Note: table is fixed size, but bishop table will only use 64 * 512 entries
+ */
 typedef struct {
     U64 magic[64];
     U64 occupancy_mask[64];
     U64 move[64 * 4096];  // index as 4096 * square + magic_ind
-} MagicTable;             // TODO
-extern MagicTable rook_magic;
-extern MagicTable bishop_magic;
+} MagicTable;
 
 // Magic gen
 U64 find_magic(U64 *occupancy_mask_table, int sq, Piece p);
