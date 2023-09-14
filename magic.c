@@ -11,25 +11,6 @@
 #include "board.h"
 #include "rng.h"
 
-U64 rook_moves(ChessBoard *board, MagicTable *magic_table, int square) {
-    U64 magic, occupancy, moves, friendlies;
-    int ind;
-
-    magic = magic_table->magic[square];
-    occupancy = magic_table->occupancy_mask[square];
-
-    // We're lazy: get top 12 bits since thats the most we need ever
-    ind = ((board->all_pieces & occupancy) * magic) >> 52;
-
-    // move is U64[64][4096]
-    moves = magic_table->move[4096 * square + ind];
-
-    friendlies =
-        board->white_to_move ? board->white_pieces : board->black_pieces;
-
-    return moves & ~friendlies;
-}
-
 void gen_occupancy_rook(MagicTable *magic_table) {
     U64 *mask = magic_table->occupancy_mask;
     U64 bb;

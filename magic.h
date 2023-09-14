@@ -15,7 +15,6 @@ extern MagicTable bishop_magic;
 
 // Rooks
 void gen_occupancy_rook(MagicTable *magic_table);
-U64 rook_moves(ChessBoard *board, MagicTable *magic_table, int square);
 U64 manual_gen_rook_moves(U64 bb, int square);
 U64 find_magic_rook(U64 *occupancy_mask_table, int sq);
 void fill_rook_moves(U64 *move, U64 occupancy_mask, U64 magic, int sq);
