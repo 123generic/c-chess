@@ -44,13 +44,22 @@ int extract_magic_moves_sq(ChessBoard *board, U64 *moves, int move_p,
 int extract_magic_moves(ChessBoard *board, MagicTable *magic_table, U64 *moves,
                         int move_p, Piece p);
 
-// Other move gen
+// Queen move gen
 U64 get_queen_moves_sq(ChessBoard *board, MagicTable *rook_table,
                        MagicTable *bishop_table, int sq);
 int extract_queen_moves_sq(ChessBoard *board, U64 *moves, int move_p,
                            U64 move_bb, int sq, Piece p);
 int extract_queen_moves(ChessBoard *board, MagicTable *rook_table,
                         MagicTable *bishop_table, U64 *moves, int move_p);
+
+// Knight move gen
+// TODO
+
+// King move gen
+U64 get_king_moves_sq(ChessBoard *board, int sq);
+int extract_king_moves_sq(ChessBoard *board, U64 *moves, int move_p,
+                          U64 move_bb, int sq);
+int extract_king_moves(ChessBoard *board, U64 *moves, int move_p);
 
 // Utilities
 U64 move_from_uci(ChessBoard *board, char *uci);

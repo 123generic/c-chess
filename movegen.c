@@ -241,3 +241,12 @@ int extract_queen_moves(ChessBoard *board, MagicTable *rook_table, MagicTable *b
 
 	return num_moves;
 }
+
+// King generation
+U64 get_king_moves_sq(ChessBoard *board, int sq) {
+	
+}
+
+int extract_king_moves_sq(ChessBoard *board, U64 *moves, int move_p,
+                          U64 move_bb, int sq);
+int extract_king_moves(ChessBoard *board, U64 *moves, int move_p);
