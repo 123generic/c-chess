@@ -5,7 +5,7 @@
 
 #include "board.h"
 #include "common.h"
-#include "magic.h"
+#include "lookup.h"
 
 // Utilities
 U64 move_from_uci(ChessBoard *board, char *uci) {
@@ -135,22 +135,27 @@ int extract_pawn_moves(ChessBoard *board, U64 *moves, int move_p,
 
 // Magic Generation
 // board[sq] should, of course, have a rook on it
-U64 get_magic_moves_sq(ChessBoard *board, MagicTable *magic_table, int sq,
+U64 get_magic_moves_sq(ChessBoard *board, LookupTable *lookup, int sq,
                        Piece piece) {
     U64 pieces, mask, magic, moves, friendlies;
     int ind, shift_amt;
 
     pieces = board->all_pieces;
-    mask = magic_table->occupancy_mask[sq];
-    magic = magic_table->magic[sq];
-    shift_amt = piece == rook ? (64 - 12) : (64 - 9);
-    ind = ((pieces & mask) * magic) >> shift_amt;
-
-    if (piece == rook) {
-        moves = magic_table->move[4096 * sq + ind];
-    } else {
-        moves = magic_table->move[512 * sq + ind];
-    }
+	if (piece == rook) {
+		mask = lookup->rook_mask[sq];
+		magic = lookup->rook_magic[sq];
+		shift_amt = 64 - 12;
+		
+		ind = ((pieces & mask) * magic) >> shift_amt;
+		moves = lookup->rook_move[4096 * sq + ind];
+	} else {
+		mask = lookup->bishop_mask[sq];
+		magic = lookup->bishop_magic[sq];
+		shift_amt = 64 - 9;
+		
+		ind = ((pieces & mask) * magic) >> shift_amt;
+		moves = lookup->bishop_move[512 * sq + ind];
+	}
 
     friendlies =
         board->white_to_move ? board->white_pieces : board->black_pieces;
@@ -178,7 +183,7 @@ int extract_magic_moves_sq(ChessBoard *board, U64 *moves, int move_p,
     return num_moves;
 }
 
-int extract_magic_moves(ChessBoard *board, MagicTable *magic_table, U64 *moves,
+int extract_magic_moves(ChessBoard *board, LookupTable *lookup, U64 *moves,
                         int move_p, Piece p) {
     int sq, num_moves;
     U64 magic_moves, bb;
@@ -187,7 +192,7 @@ int extract_magic_moves(ChessBoard *board, MagicTable *magic_table, U64 *moves,
     bb = get_bb(board, p, board->white_to_move);
 
     while ((sq = rightmost_set(bb)) != -1) {
-        magic_moves = get_magic_moves_sq(board, magic_table, sq, p);
+        magic_moves = get_magic_moves_sq(board, lookup, sq, p);
         num_moves += extract_magic_moves_sq(board, moves, move_p + num_moves,
                                             magic_moves, sq, p);
 
@@ -198,9 +203,9 @@ int extract_magic_moves(ChessBoard *board, MagicTable *magic_table, U64 *moves,
 }
 
 // Queen generation
-U64 get_queen_moves_sq(ChessBoard *board, MagicTable *rook_table, MagicTable *bishop_table, int sq) {
-    return get_magic_moves_sq(board, rook_table, sq, rook) |
-           get_magic_moves_sq(board, bishop_table, sq, bishop);
+U64 get_queen_moves_sq(ChessBoard *board, LookupTable *lookup, int sq) {
+    return get_magic_moves_sq(board, lookup, sq, rook) |
+           get_magic_moves_sq(board, lookup, sq, bishop);
 }
 
 int extract_queen_moves_sq(ChessBoard *board, U64 *moves, int move_p,
@@ -223,7 +228,7 @@ int extract_queen_moves_sq(ChessBoard *board, U64 *moves, int move_p,
     return num_moves;
 }
 
-int extract_queen_moves(ChessBoard *board, MagicTable *rook_table, MagicTable *bishop_table, U64 *moves,
+int extract_queen_moves(ChessBoard *board, LookupTable *lookup, U64 *moves,
 						int move_p) {
 	int sq, num_moves;
 	U64 magic_moves, bb;
@@ -232,7 +237,7 @@ int extract_queen_moves(ChessBoard *board, MagicTable *rook_table, MagicTable *b
 	bb = get_bb(board, queen, board->white_to_move);
 
 	while ((sq = rightmost_set(bb)) != -1) {
-		magic_moves = get_queen_moves_sq(board, rook_table, bishop_table, sq);
+		magic_moves = get_queen_moves_sq(board, lookup, sq);
 		num_moves += extract_magic_moves_sq(board, moves, move_p + num_moves,
 											magic_moves, sq, queen);
 
@@ -243,10 +248,10 @@ int extract_queen_moves(ChessBoard *board, MagicTable *rook_table, MagicTable *b
 }
 
 // King generation
-U64 get_king_moves_sq(ChessBoard *board, int sq) {
+// U64 get_king_moves_sq(ChessBoard *board, int sq) {
 	
-}
+// }
 
-int extract_king_moves_sq(ChessBoard *board, U64 *moves, int move_p,
-                          U64 move_bb, int sq);
-int extract_king_moves(ChessBoard *board, U64 *moves, int move_p);
+// int extract_king_moves_sq(ChessBoard *board, U64 *moves, int move_p,
+//                           U64 move_bb, int sq);
+// int extract_king_moves(ChessBoard *board, U64 *moves, int move_p);

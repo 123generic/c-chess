@@ -3,7 +3,7 @@
 
 #include "board.h"
 #include "common.h"
-#include "magic.h"
+#include "lookup.h"
 
 // Move representation
 // moves are packed into a U64 (LSB -> MSB)
@@ -37,29 +37,28 @@ int extract_pawn_moves(ChessBoard *board, U64 *moves, int move_p,
                        U64 pawn_moves, MoveType move_type);
 
 // Magic move gen
-U64 get_magic_moves_sq(ChessBoard *board, MagicTable *magic_table, int sq,
+U64 get_magic_moves_sq(ChessBoard *board, LookupTable *lookup, int sq,
                        Piece piece);
 int extract_magic_moves_sq(ChessBoard *board, U64 *moves, int move_p,
                            U64 magic_moves, int sq, Piece p);
-int extract_magic_moves(ChessBoard *board, MagicTable *magic_table, U64 *moves,
+int extract_magic_moves(ChessBoard *board, LookupTable *lookup, U64 *moves,
                         int move_p, Piece p);
 
 // Queen move gen
-U64 get_queen_moves_sq(ChessBoard *board, MagicTable *rook_table,
-                       MagicTable *bishop_table, int sq);
+U64 get_queen_moves_sq(ChessBoard *board, LookupTable *lookup, int sq);
 int extract_queen_moves_sq(ChessBoard *board, U64 *moves, int move_p,
                            U64 move_bb, int sq, Piece p);
-int extract_queen_moves(ChessBoard *board, MagicTable *rook_table,
-                        MagicTable *bishop_table, U64 *moves, int move_p);
+int extract_queen_moves(ChessBoard *board, LookupTable *lookup, U64 *moves,
+                        int move_p);
 
 // Knight move gen
 // TODO
 
 // King move gen
-U64 get_king_moves_sq(ChessBoard *board, int sq);
-int extract_king_moves_sq(ChessBoard *board, U64 *moves, int move_p,
-                          U64 move_bb, int sq);
-int extract_king_moves(ChessBoard *board, U64 *moves, int move_p);
+// U64 get_king_moves_sq(ChessBoard *board, int sq);
+// int extract_king_moves_sq(ChessBoard *board, U64 *moves, int move_p,
+//                           U64 move_bb, int sq);
+// int extract_king_moves(ChessBoard *board, U64 *moves, int move_p);
 
 // Utilities
 U64 move_from_uci(ChessBoard *board, char *uci);

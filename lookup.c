@@ -1,23 +1,16 @@
-/*
- * Reference for magic bitboards:
- * - https://www.josherv.in/2021/03/19/chess-1/
- * - https://analog-hors.github.io/site/magic-bitboards/
- */
-
-#include "magic.h"
+#include "lookup.h"
 
 #include <string.h>
 
-#include "board.h"
 #include "rng.h"
 
 // Find magic
-U64 find_magic(U64 *occupancy_mask_table, int sq, Piece p) {
+U64 find_magic(U64 *mask, int sq, Piece p) {
     U64 magic, subset, occupancy;
     U64 moves[4096] = {0};  // Initialize to zero
     int ind, shift_amt;
 
-    occupancy = occupancy_mask_table[sq];
+    occupancy = mask[sq];
     shift_amt = p == rook ? (64 - 12) : (64 - 9);
 
     for (int loop_cnt = 0; loop_cnt < (1 << 24); loop_cnt++) {
@@ -53,8 +46,8 @@ U64 find_magic(U64 *occupancy_mask_table, int sq, Piece p) {
 }
 
 // Rook magics
-void gen_occupancy_rook(MagicTable *magic_table) {
-    U64 *mask = magic_table->occupancy_mask;
+void gen_occupancy_rook(LookupTable *lookup_table) {
+    U64 *mask = lookup_table->rook_mask;
     U64 bb;
     int sq, cell;
 
@@ -123,7 +116,7 @@ U64 manual_gen_rook_moves(U64 bb, int sq) {
     return moves;
 }
 
-void fill_rook_moves(U64 *move, U64 occupancy_mask, U64 magic, int sq) {
+void fill_rook_moves(U64 *move, U64 mask, U64 magic, int sq) {
     // Subset iteration trick (Carry-Rippler)
     U64 subset = 0;
     while (1) {
@@ -131,37 +124,14 @@ void fill_rook_moves(U64 *move, U64 occupancy_mask, U64 magic, int sq) {
         U64 mv = manual_gen_rook_moves(subset, sq);
         move[4096 * sq + ind] = mv;
 
-        subset = (subset - occupancy_mask) & occupancy_mask;
+        subset = (subset - mask) & mask;
         if (subset == 0) break;
     }
 }
 
-void init_magics(MagicTable *magic_table, Piece p) {
-    U64 *magic = magic_table->magic;
-    U64 *mask = magic_table->occupancy_mask;
-    U64 *move = magic_table->move;
-
-    memset(magic_table, 0, sizeof(MagicTable));
-    if (p == rook) {
-        gen_occupancy_rook(magic_table);
-    } else {
-        gen_occupancy_bishop(magic_table);
-    }
-
-    for (int i = 0; i < 64; i++) {
-        if (p == rook) {
-        	magic[i] = find_magic(mask, i, rook);
-            fill_rook_moves(move, mask[i], magic[i], i);
-        } else {
-			magic[i] = find_magic(mask, i, bishop);
-            fill_bishop_moves(move, mask[i], magic[i], i);
-        }
-    }
-}
-
 // Bishop magics
-void gen_occupancy_bishop(MagicTable *magic_table) {
-    U64 *mask = magic_table->occupancy_mask;
+void gen_occupancy_bishop(LookupTable *lookup_table) {
+    U64 *mask = lookup_table->bishop_mask;
     U64 bb;
     int sq, cell;
 
@@ -239,7 +209,7 @@ U64 manual_gen_bishop_moves(U64 bb, int sq) {
     return moves;
 }
 
-void fill_bishop_moves(U64 *move, U64 occupancy_mask, U64 magic, int sq) {
+void fill_bishop_moves(U64 *move, U64 mask, U64 magic, int sq) {
     // Subset iteration trick (Carry-Rippler)
     U64 subset = 0;
     while (1) {
@@ -247,7 +217,80 @@ void fill_bishop_moves(U64 *move, U64 occupancy_mask, U64 magic, int sq) {
         U64 mv = manual_gen_bishop_moves(subset, sq);
         move[512 * sq + ind] = mv;
 
-        subset = (subset - occupancy_mask) & occupancy_mask;
+        subset = (subset - mask) & mask;
         if (subset == 0) break;
     }
+}
+
+void gen_king_moves(LookupTable *lookup_table) {
+    U64 *bb = lookup_table->king_move;
+    U64 moves;
+    int offsets[] = {9, 8, 7, 1, -1, -7, -8, -9};
+    int offsets_len = sizeof(offsets) / sizeof(offsets[0]);
+    int i, j, offset;
+
+    for (i = 0; i < 64; i++) {
+        moves = 0;
+
+        for (j = 0; j < offsets_len; j++) {
+            offset = offsets[j];
+            if (0 <= i + offset && i + offset < 64) BB_SET(moves, i + offset);
+        }
+
+        if (i % 8 == 7) moves &= ~FILE_8;
+
+        if (i % 8 == 0) moves &= ~FILE_1;
+
+        bb[i] = moves;
+    }
+}
+
+void gen_knight_moves(LookupTable *lookup_table) {
+    U64 *bb = lookup_table->knight_move;
+    U64 moves;
+    int offsets[] = {17, 15, 6, -10, -17, -15, -6, 10};
+    int offsets_len = sizeof(offsets) / sizeof(offsets[0]);
+    int i, j, offset;
+
+    for (i = 0; i < 64; i++) {
+        moves = 0;
+
+        for (j = 0; j < offsets_len; j++) {
+            offset = offsets[j];
+            if (0 <= i + offset && i + offset < 64) BB_SET(moves, i + offset);
+        }
+
+        if (i % 8 >= 6) moves &= ~FILE_8;
+
+        if (i % 8 == 7) moves &= ~FILE_7;
+
+        if (i % 8 <= 1) moves &= ~FILE_1;
+
+        if (i % 8 == 0) moves &= ~FILE_2;
+
+        bb[i] = moves;
+    }
+}
+
+void init_LookupTable(LookupTable *lookup_table) {
+    // Magics
+    gen_occupancy_bishop(lookup_table);
+    gen_occupancy_rook(lookup_table);
+
+    for (int i = 0; i < 64; i++) {
+        lookup_table->bishop_magic[i] =
+            find_magic(lookup_table->bishop_mask, i, bishop);
+        fill_bishop_moves(lookup_table->bishop_move,
+                          lookup_table->bishop_mask[i],
+                          lookup_table->bishop_magic[i], i);
+
+        lookup_table->rook_magic[i] =
+            find_magic(lookup_table->rook_mask, i, rook);
+        fill_rook_moves(lookup_table->rook_move, lookup_table->rook_mask[i],
+                        lookup_table->rook_magic[i], i);
+    }
+
+    // Other pieces
+    gen_king_moves(lookup_table);
+    gen_knight_moves(lookup_table);
 }

@@ -13,7 +13,7 @@ CHESS_EXEC = chess
 TEST_EXEC = test_program
 
 # Source files
-CHESS_SRC = board.c magic.c movegen.c rng.c
+CHESS_SRC = board.c lookup.c movegen.c rng.c
 TEST_SRC = test.c
 
 all: $(CHESS_SRC)

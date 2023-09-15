@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "magic.h"
+#include "lookup.h"
 #include "movegen.h"
 
 // Bitboard helpers

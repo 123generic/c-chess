@@ -4,7 +4,7 @@
 
 #include "board.h"
 #include "common.h"
-#include "magic.h"
+#include "lookup.h"
 #include "movegen.h"
 #include "rng.h"
 
@@ -235,9 +235,9 @@ void test_extract_pawn_moves(void) {
 
 void test_gen_occupancy_rook(void) {
     U64 expected;
-    MagicTable rook_table = {0};
+    LookupTable lookup = {0};
 
-    gen_occupancy_rook(&rook_table);
+	init_LookupTable(&lookup);
 
     // Test 1: 12 bits on
     expected = make_bitboard(
@@ -249,7 +249,7 @@ void test_gen_occupancy_rook(void) {
         "10000000"
         "10000000"
         "00000000");
-    if (rook_table.occupancy_mask[63] != expected) {
+    if (lookup.rook_mask[63] != expected) {
         printf("Test 1 failed.\n");
         return;
     }
@@ -264,7 +264,7 @@ void test_gen_occupancy_rook(void) {
         "00010000"
         "00010000"
         "00000000");
-    if (rook_table.occupancy_mask[28] != expected) {
+    if (lookup.rook_mask[28] != expected) {
         printf("Test 2 failed.\n");
         return;
     }
@@ -328,9 +328,9 @@ void test_manual_gen_rook_moves(void) {
 
 void test_gen_occupancy_bishop(void) {
     U64 expected;
-    MagicTable bishop_table = {0};
-
-    gen_occupancy_bishop(&bishop_table);
+    LookupTable lookup = {0};
+	
+	init_LookupTable(&lookup);
 
     // Test 1
     expected = make_bitboard(
@@ -342,7 +342,7 @@ void test_gen_occupancy_bishop(void) {
         "00100000"
         "01000000"
         "00000000");
-    if (bishop_table.occupancy_mask[42] != expected) {
+    if (lookup.bishop_mask[42] != expected) {
         printf("[%s %s:%d] Test 1 failed.\n", __func__, __FILE__, __LINE__);
         return;
     }
@@ -357,8 +357,8 @@ void test_gen_occupancy_bishop(void) {
         "00100000"
         "01000000"
         "00000000");
-    if (bishop_table.occupancy_mask[7] != expected &&
-        bishop_table.occupancy_mask[56] != expected) {
+    if (lookup.bishop_mask[7] != expected &&
+        lookup.bishop_mask[56] != expected) {
         printf("[%s %s:%d] Test 2 failed.\n", __func__, __FILE__, __LINE__);
         return;
     }
@@ -373,7 +373,7 @@ void test_gen_occupancy_bishop(void) {
         "00100000"
         "00010000"
         "00000000");
-    if (bishop_table.occupancy_mask[39] != expected) {
+    if (lookup.bishop_mask[39] != expected) {
         printf("[%s %s:%d] Test 3 failed.\n", __func__, __FILE__, __LINE__);
         return;
     }
@@ -438,8 +438,8 @@ void test_manual_gen_bishop_moves(void) {
 }
 
 void test_init_magic_rook(void) {
-    MagicTable magic_table;
-    init_magics(&magic_table, rook);
+    LookupTable lookup = {0};
+	init_LookupTable(&lookup);
 
     // Test 1: Validate that the magic table produces the correct moves
     // for a rook on square 27 and square 28 for specific occupancy boards.
@@ -462,8 +462,8 @@ void test_init_magic_rook(void) {
         "00001000"
         "00001000");
     int sq = 27;
-    int ind1 = (occupancy1 * magic_table.magic[sq]) >> (64 - 12);
-    U64 magic_moves1 = magic_table.move[4096 * sq + ind1];
+    int ind1 = (occupancy1 * lookup.rook_magic[sq]) >> (64 - 12);
+    U64 magic_moves1 = lookup.rook_move[4096 * sq + ind1];
     if (magic_moves1 != expected1) {
         printf("Test 1 failed for square 27.\n");
         return;
@@ -487,8 +487,8 @@ void test_init_magic_rook(void) {
         "00010000"
         "00010000"
         "00010000");
-    int ind2 = (occupancy2 * magic_table.magic[28]) >> (64 - 12);
-    U64 magic_moves2 = magic_table.move[4096 * 28 + ind2];
+    int ind2 = (occupancy2 * lookup.rook_magic[28]) >> (64 - 12);
+    U64 magic_moves2 = lookup.rook_move[4096 * 28 + ind2];
     if (magic_moves2 != expected2) {
         printf("Test 1 failed for square 28.\n");
         return;
@@ -501,8 +501,8 @@ void test_init_magic_bishop(void) {
     U64 occupancy, expected, magic_moves;
     int sq, ind;
 
-    MagicTable magic_table;
-    init_magics(&magic_table, bishop);
+    LookupTable lookup = {0};
+	init_LookupTable(&lookup);
 
     // Test 1
     occupancy = make_bitboard(
@@ -524,8 +524,8 @@ void test_init_magic_bishop(void) {
         "00101000"
         "01000100");
     sq = 20;
-    ind = (occupancy * magic_table.magic[sq]) >> (64 - 9);
-    magic_moves = magic_table.move[512 * sq + ind];
+    ind = (occupancy * lookup.bishop_magic[sq]) >> (64 - 9);
+    magic_moves = lookup.bishop_move[512 * sq + ind];
     if (magic_moves != expected) {
         printf("[%s %s:%d] Test 1 failed.\n", __func__, __FILE__, __LINE__);
         return;
@@ -551,8 +551,8 @@ void test_init_magic_bishop(void) {
         "00000000"
         "00000000");
     sq = 52;
-    ind = (occupancy * magic_table.magic[sq]) >> (64 - 9);
-    magic_moves = magic_table.move[512 * sq + ind];
+    ind = (occupancy * lookup.bishop_magic[sq]) >> (64 - 9);
+    magic_moves = lookup.bishop_move[512 * sq + ind];
     if (magic_moves != expected) {
         printf("[%s %s:%d] Test 1 failed.\n", __func__, __FILE__, __LINE__);
         return;
@@ -565,16 +565,16 @@ void test_extract_magic_moves_rook(void) {
     ChessBoard board;
     U64 moves[256] = {0};
     int move_p = 0;
-    MagicTable magic_table = {0};
-
-    init_magics(&magic_table, rook);
+    
+	LookupTable lookup = {0};
+	init_LookupTable(&lookup);
 
     // Test 1
     ChessBoard_from_FEN(
         &board,
         "3B4/2R1p1Q1/1PRp1P1P/2pkb3/pp1r2P1/3p1N1P/r1nnP3/6K1 w - - 0 1");
 
-    move_p += extract_magic_moves(&board, &magic_table, moves, move_p, rook);
+    move_p += extract_magic_moves(&board, &lookup, moves, move_p, rook);
 
     char *expected_uci_1[] = {"c6c5", "c6d6", "c7a7", "c7b7",
                               "c7d7", "c7e7", "c7c8"};
@@ -596,7 +596,7 @@ void test_extract_magic_moves_rook(void) {
     ChessBoard_from_FEN(
         &board, "3k4/pq4bp/1pppK3/2P2P2/p6R/PRpB1b2/PP2Q1P1/3nn3 w - - 0 1");
 
-    move_p += extract_magic_moves(&board, &magic_table, moves, move_p, rook);
+    move_p += extract_magic_moves(&board, &lookup, moves, move_p, rook);
 
     char expected_uci_2[][5] = {"b3b4", "b3b5", "b3b6", "b3c3", "h4h1", "h4h2",
                                 "h4h3", "h4h5", "h4h6", "h4h7", "h4a4", "h4b4",
@@ -632,7 +632,7 @@ void test_extract_magic_moves_rook(void) {
     ChessBoard_from_FEN(
         &board, "N2K4/2p2pNP/2Q2pq1/6RP/3P2p1/1PPkb1p1/1pbB1p1P/r7 w - - 0 1");
 
-    move_p += extract_magic_moves(&board, &magic_table, moves, move_p, rook);
+    move_p += extract_magic_moves(&board, &lookup, moves, move_p, rook);
 
     char expected_uci_3[][5] = {"g5a5", "g5b5", "g5c5", "g5d5",
                                 "g5e5", "g5f5", "g5g4", "g5g6"};
@@ -667,9 +667,9 @@ void test_extract_magic_moves_bishop(void) {
     ChessBoard board;
     U64 moves[256] = {0};
     int move_p = 0;
-    MagicTable magic_table = {0};
 
-    init_magics(&magic_table, bishop);
+	LookupTable lookup = {0};
+	init_LookupTable(&lookup);
 
     // Test 1
     memset(moves, 0, sizeof(moves));
@@ -677,7 +677,7 @@ void test_extract_magic_moves_bishop(void) {
     ChessBoard_from_FEN(
         &board, "6N1/5RKP/BbPP4/6P1/pR1n2qn/p1B1p3/Q1Pp3r/N1r4k w - - 0 1");
 
-    move_p += extract_magic_moves(&board, &magic_table, moves, move_p, bishop);
+    move_p += extract_magic_moves(&board, &lookup, moves, move_p, bishop);
 
     char expected_uci_1[][5] = {"a6b7", "a6c8", "a6b5", "a6c4", "a6d3",
                                 "a6e2", "a6f1", "c3d4", "c3d2", "c3b2"};
@@ -711,7 +711,7 @@ void test_extract_magic_moves_bishop(void) {
     ChessBoard_from_FEN(
         &board, "7b/P3QKpk/1rPq2n1/1b6/pB3p1p/p4p1N/PP1p1rP1/3B4 b - - 0 1");
 
-    move_p += extract_magic_moves(&board, &magic_table, moves, move_p, bishop);
+    move_p += extract_magic_moves(&board, &lookup, moves, move_p, bishop);
 
     char expected_uci_2[][5] = {"b5a6", "b5c6", "b5c4", "b5d3", "b5e2", "b5f1"};
     char actual_uci_2[sizeof(expected_uci_2) / sizeof(expected_uci_2[0])][5];
@@ -745,10 +745,9 @@ void test_extract_queen_moves(void) {
     ChessBoard board;
     U64 moves[256] = {0};
     int move_p = 0;
-    MagicTable rook_table = {0}, bishop_table = {0};
 
-    init_magics(&rook_table, rook);
-    init_magics(&bishop_table, bishop);
+	LookupTable lookup = {0};
+	init_LookupTable(&lookup);
 
     // Test 1
     memset(moves, 0, sizeof(moves));
@@ -757,7 +756,7 @@ void test_extract_queen_moves(void) {
         &board, "k5r1/Pp6/P1p1RRpb/4rpQq/2PB1pp1/1n2P1n1/1K1N3p/8 w - - 0 1");
 
     move_p +=
-        extract_queen_moves(&board, &rook_table, &bishop_table, moves, move_p);
+        extract_queen_moves(&board, &lookup, moves, move_p);
 
     char expected_uci_1[][5] = {"g5g6", "g5g4", "g5f4", "g5f5",
                                 "g5h4", "g5h5", "g5h6"};
@@ -792,7 +791,7 @@ void test_extract_queen_moves(void) {
         &board, "1N4RB/1p2KNp1/Rp3p2/1kp1bq1P/2nP1rP1/2P2Q1r/p7/4n3 b - - 0 1");
 
     move_p +=
-        extract_queen_moves(&board, &rook_table, &bishop_table, moves, move_p);
+        extract_queen_moves(&board, &lookup, moves, move_p);
 
     char expected_uci_2[][5] = {"f5b1", "f5c2", "f5d3", "f5e4", "f5g6", "f5h7",
                                 "f5c8", "f5d7", "f5e6", "f5g4", "f5g5", "f5h5"};
@@ -825,10 +824,12 @@ void test_extract_queen_moves(void) {
 
 // Debugging with printf
 void debug_gen_occupancy_rook(void) {
-    MagicTable magic_table = {0};
-    U64 *occupancy_mask = magic_table.occupancy_mask;
+    LookupTable lookup = {0};
+	init_LookupTable(&lookup);
 
-    gen_occupancy_rook(&magic_table);
+    U64 *occupancy_mask = lookup.rook_mask;
+
+    gen_occupancy_rook(&lookup);
 
     for (int i = 0; i < 64; i++) {
         printf("Bitboard for Square %d:\n", i);
@@ -838,14 +839,16 @@ void debug_gen_occupancy_rook(void) {
 }
 
 void debug_find_magic_rook(void) {
-    MagicTable magic_table = {0};
+    LookupTable lookup = {0};
+	init_LookupTable(&lookup);
+
     U64 magic;
     int sq;
 
-    gen_occupancy_rook(&magic_table);
+    gen_occupancy_rook(&lookup);
 
     for (sq = 0; sq < 64; sq++) {
-        magic = find_magic(magic_table.occupancy_mask, 0, rook);
+        magic = find_magic(lookup.rook_mask, 0, rook);
         printf("sq: %d, magic: %llu\n", sq, magic);
     }
 }
