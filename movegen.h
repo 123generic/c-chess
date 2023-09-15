@@ -44,8 +44,18 @@ int extract_magic_moves_sq(ChessBoard *board, U64 *moves, int move_p,
 int extract_magic_moves(ChessBoard *board, MagicTable *magic_table, U64 *moves,
                         int move_p, Piece p);
 
+// Other move gen
+U64 get_queen_moves_sq(ChessBoard *board, MagicTable *rook_table,
+                       MagicTable *bishop_table, int sq);
+int extract_queen_moves_sq(ChessBoard *board, U64 *moves, int move_p,
+                           U64 move_bb, int sq, Piece p);
+int extract_queen_moves(ChessBoard *board, MagicTable *rook_table,
+                        MagicTable *bishop_table, U64 *moves, int move_p);
+
 // Utilities
 U64 move_from_uci(ChessBoard *board, char *uci);
 void move_to_uci(U64 move, char *uci);
+int get_piece(Piece p, int wtm);
+U64 get_bb(ChessBoard *board, Piece p, int wtm);
 
 #endif  // MOVEGEN_H

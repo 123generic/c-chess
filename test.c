@@ -673,7 +673,7 @@ void test_extract_magic_moves_bishop(void) {
 
     // Test 1
     memset(moves, 0, sizeof(moves));
-	move_p = 0;
+    move_p = 0;
     ChessBoard_from_FEN(
         &board, "6N1/5RKP/BbPP4/6P1/pR1n2qn/p1B1p3/Q1Pp3r/N1r4k w - - 0 1");
 
@@ -705,9 +705,9 @@ void test_extract_magic_moves_bishop(void) {
         }
     }
 
-	// Test 2
+    // Test 2
     memset(moves, 0, sizeof(moves));
-	move_p = 0;
+    move_p = 0;
     ChessBoard_from_FEN(
         &board, "7b/P3QKpk/1rPq2n1/1b6/pB3p1p/p4p1N/PP1p1rP1/3B4 b - - 0 1");
 
@@ -726,7 +726,6 @@ void test_extract_magic_moves_bishop(void) {
         move_to_uci(moves[i], actual_uci_2[i]);
     }
 
-
     qsort(expected_uci_2, len2, sizeof(expected_uci_2[0]),
           (int (*)(const void *, const void *))strcmp);
     qsort(actual_uci_2, len2, sizeof(actual_uci_2[0]),
@@ -740,6 +739,88 @@ void test_extract_magic_moves_bishop(void) {
     }
 
     printf("test_extract_magic_moves_bishop: All tests passed.\n");
+}
+
+void test_extract_queen_moves(void) {
+    ChessBoard board;
+    U64 moves[256] = {0};
+    int move_p = 0;
+    MagicTable rook_table = {0}, bishop_table = {0};
+
+    init_magics(&rook_table, rook);
+    init_magics(&bishop_table, bishop);
+
+    // Test 1
+    memset(moves, 0, sizeof(moves));
+    move_p = 0;
+    ChessBoard_from_FEN(
+        &board, "k5r1/Pp6/P1p1RRpb/4rpQq/2PB1pp1/1n2P1n1/1K1N3p/8 w - - 0 1");
+
+    move_p +=
+        extract_queen_moves(&board, &rook_table, &bishop_table, moves, move_p);
+
+    char expected_uci_1[][5] = {"g5g6", "g5g4", "g5f4", "g5f5",
+                                "g5h4", "g5h5", "g5h6"};
+    char actual_uci_1[sizeof(expected_uci_1) / sizeof(expected_uci_1[0])][5];
+
+    for (int i = 0; i < move_p; i++) {
+        move_to_uci(moves[i], actual_uci_1[i]);
+    }
+
+    const size_t len1 = sizeof(expected_uci_1) / sizeof(expected_uci_1[0]);
+    if (move_p != len1) {
+        printf("[%s %s:%d] Test 1 failed.\n", __func__, __FILE__, __LINE__);
+        return;
+    }
+
+    qsort(expected_uci_1, len1, sizeof(expected_uci_1[0]),
+          (int (*)(const void *, const void *))strcmp);
+    qsort(actual_uci_1, len1, sizeof(actual_uci_1[0]),
+          (int (*)(const void *, const void *))strcmp);
+
+    for (size_t i = 0; i < len1; i++) {
+        if (strcmp(expected_uci_1[i], actual_uci_1[i]) != 0) {
+            printf("[%s %s:%d] Test 1 failed.\n", __func__, __FILE__, __LINE__);
+            return;
+        }
+    }
+
+    // Test 2
+    memset(moves, 0, sizeof(moves));
+    move_p = 0;
+    ChessBoard_from_FEN(
+        &board, "1N4RB/1p2KNp1/Rp3p2/1kp1bq1P/2nP1rP1/2P2Q1r/p7/4n3 b - - 0 1");
+
+    move_p +=
+        extract_queen_moves(&board, &rook_table, &bishop_table, moves, move_p);
+
+    char expected_uci_2[][5] = {"f5b1", "f5c2", "f5d3", "f5e4", "f5g6", "f5h7",
+                                "f5c8", "f5d7", "f5e6", "f5g4", "f5g5", "f5h5"};
+    char actual_uci_2[sizeof(expected_uci_2) / sizeof(expected_uci_2[0])][5];
+
+    for (int i = 0; i < move_p; i++) {
+        move_to_uci(moves[i], actual_uci_2[i]);
+    }
+
+    const size_t len2 = sizeof(expected_uci_2) / sizeof(expected_uci_2[0]);
+    if (move_p != len2) {
+        printf("[%s %s:%d] Test 2 failed.\n", __func__, __FILE__, __LINE__);
+        return;
+    }
+
+    qsort(expected_uci_2, len2, sizeof(expected_uci_2[0]),
+          (int (*)(const void *, const void *))strcmp);
+    qsort(actual_uci_2, len2, sizeof(actual_uci_2[0]),
+          (int (*)(const void *, const void *))strcmp);
+
+    for (size_t i = 0; i < len2; i++) {
+        if (strcmp(expected_uci_2[i], actual_uci_2[i]) != 0) {
+            printf("[%s %s:%d] Test 2 failed.\n", __func__, __FILE__, __LINE__);
+            return;
+        }
+    }
+
+    printf("test_extract_queen_moves: All tests passed.\n");
 }
 
 // Debugging with printf
@@ -788,6 +869,9 @@ void unit_test(void) {
 
     test_extract_magic_moves_rook();
     test_extract_magic_moves_bishop();
+    test_extract_queen_moves();
+
+    printf("Finished unit tests.\n");
 }
 
 void debug_print(void) {

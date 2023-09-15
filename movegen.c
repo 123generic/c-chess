@@ -38,6 +38,40 @@ void move_to_uci(U64 move, char *uci) {
     uci[4] = '\0';
 }
 
+int get_piece(Piece p, int wtm) {
+    switch (p) {
+        case pawn:
+            return wtm ? WHITE_PAWN : BLACK_PAWN;
+        case rook:
+            return wtm ? WHITE_ROOK : BLACK_ROOK;
+        case knight:
+            return wtm ? WHITE_KNIGHT : BLACK_KNIGHT;
+        case bishop:
+            return wtm ? WHITE_BISHOP : BLACK_BISHOP;
+        case queen:
+            return wtm ? WHITE_QUEEN : BLACK_QUEEN;
+        case king:
+            return wtm ? WHITE_KING : BLACK_KING;
+    }
+}
+
+U64 get_bb(ChessBoard *board, Piece p, int wtm) {
+    switch (p) {
+        case pawn:
+            return wtm ? board->white_pawns : board->black_pawns;
+        case rook:
+            return wtm ? board->white_rooks : board->black_rooks;
+        case knight:
+            return wtm ? board->white_knights : board->black_knights;
+        case bishop:
+            return wtm ? board->white_bishops : board->black_bishops;
+        case queen:
+            return wtm ? board->white_queens : board->black_queens;
+        case king:
+            return wtm ? board->white_king : board->black_king;
+    }
+}
+
 // Pawn generation
 // move_p points to the end of the moves array
 // moves is assumed to be large enough to hold all moves (256)
@@ -112,11 +146,11 @@ U64 get_magic_moves_sq(ChessBoard *board, MagicTable *magic_table, int sq,
     shift_amt = piece == rook ? (64 - 12) : (64 - 9);
     ind = ((pieces & mask) * magic) >> shift_amt;
 
-	if (piece == rook) {
-    	moves = magic_table->move[4096 * sq + ind];
-	} else {
-		moves = magic_table->move[512 * sq + ind];
-	}
+    if (piece == rook) {
+        moves = magic_table->move[4096 * sq + ind];
+    } else {
+        moves = magic_table->move[512 * sq + ind];
+    }
 
     friendlies =
         board->white_to_move ? board->white_pieces : board->black_pieces;
@@ -127,14 +161,9 @@ U64 get_magic_moves_sq(ChessBoard *board, MagicTable *magic_table, int sq,
 int extract_magic_moves_sq(ChessBoard *board, U64 *moves, int move_p,
                            U64 magic_moves, int sq, Piece p) {
     int ind, to, piece, captured;
-    int wtm = board->white_to_move;
     int num_moves = 0;
 
-    if (wtm) {
-        piece = p == rook ? WHITE_ROOK : WHITE_BISHOP;
-    } else {
-        piece = p == rook ? BLACK_ROOK : BLACK_BISHOP;
-    }
+    piece = get_piece(p, board->white_to_move);
 
     while ((ind = rightmost_set(magic_moves)) != -1) {
         // this means the move is ind + 8 -> ind
@@ -151,15 +180,11 @@ int extract_magic_moves_sq(ChessBoard *board, U64 *moves, int move_p,
 
 int extract_magic_moves(ChessBoard *board, MagicTable *magic_table, U64 *moves,
                         int move_p, Piece p) {
-    int sq;
-    int num_moves = 0;
+    int sq, num_moves;
     U64 magic_moves, bb;
 
-    if (board->white_to_move) {
-        bb = p == rook ? board->white_rooks : board->white_bishops;
-    } else {
-        bb = p == rook ? board->black_rooks : board->black_bishops;
-    }
+	num_moves = 0;
+    bb = get_bb(board, p, board->white_to_move);
 
     while ((sq = rightmost_set(bb)) != -1) {
         magic_moves = get_magic_moves_sq(board, magic_table, sq, p);
@@ -170,4 +195,49 @@ int extract_magic_moves(ChessBoard *board, MagicTable *magic_table, U64 *moves,
     }
 
     return num_moves;
+}
+
+// Queen generation
+U64 get_queen_moves_sq(ChessBoard *board, MagicTable *rook_table, MagicTable *bishop_table, int sq) {
+    return get_magic_moves_sq(board, rook_table, sq, rook) |
+           get_magic_moves_sq(board, bishop_table, sq, bishop);
+}
+
+int extract_queen_moves_sq(ChessBoard *board, U64 *moves, int move_p,
+                           U64 move_bb, int sq, Piece p) {
+    int ind, to, piece, captured;
+    int num_moves = 0;
+
+    piece = get_piece(p, board->white_to_move);
+
+    while ((ind = rightmost_set(move_bb)) != -1) {
+        // this means the move is ind + 8 -> ind
+        to = ind;
+        captured = ChessBoard_piece_at(board, ind);
+        moves[move_p + num_moves] =
+            sq | to << 6 | piece << 12 | captured << 16 | SLIDE << 20;
+        num_moves++;
+        BB_CLEAR(move_bb, ind);
+    }
+
+    return num_moves;
+}
+
+int extract_queen_moves(ChessBoard *board, MagicTable *rook_table, MagicTable *bishop_table, U64 *moves,
+						int move_p) {
+	int sq, num_moves;
+	U64 magic_moves, bb;
+	
+	num_moves = 0;
+	bb = get_bb(board, queen, board->white_to_move);
+
+	while ((sq = rightmost_set(bb)) != -1) {
+		magic_moves = get_queen_moves_sq(board, rook_table, bishop_table, sq);
+		num_moves += extract_magic_moves_sq(board, moves, move_p + num_moves,
+											magic_moves, sq, queen);
+
+		BB_CLEAR(bb, sq);
+	}
+
+	return num_moves;
 }
