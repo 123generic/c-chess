@@ -13,28 +13,25 @@
 // 16-19: capture piece
 // 20-23: move type
 
+typedef enum {
+    SINGLE_PUSH,
+} PawnMoveType;
+
 // Move Type (enum fits in 4 bits)
 typedef enum {
-    SINGLE_PUSH = 0,
-    DOUBLE_PUSH = 1,
-    CAPTURE = 2,
-    EN_PASSANT = 3,
-    PROMOTION = 4,
-    PROMOTION_CAPTURE = 5,
+    NORMAL,
+    EN_PASSANT,
+    PROMOTION,
+    CASTLE_KING,
+    CASTLE_QUEEN,
 
-    CRAWL = 6,
-    SLIDE = 7,
-
-    CASTLE_KING = 8,
-    CASTLE_QUEEN = 9,
-
-    UNKNOWN = 10,
+    UNKNOWN,
 } MoveType;
 
 // Pawns
-U64 get_pawn_moves(ChessBoard *board, MoveType move_type);
+U64 get_pawn_moves(ChessBoard *board, PawnMoveType move_type);
 int extract_pawn_moves(ChessBoard *board, U64 *moves, int move_p,
-                       U64 pawn_moves, MoveType move_type);
+                       U64 pawn_moves, PawnMoveType move_type);
 
 // Magic move gen
 U64 get_magic_moves_sq(ChessBoard *board, LookupTable *lookup, int sq,
@@ -47,18 +44,23 @@ int extract_magic_moves(ChessBoard *board, LookupTable *lookup, U64 *moves,
 // Queen move gen
 U64 get_queen_moves_sq(ChessBoard *board, LookupTable *lookup, int sq);
 int extract_queen_moves_sq(ChessBoard *board, U64 *moves, int move_p,
-                           U64 move_bb, int sq, Piece p);
+                           U64 move_bb, int sq);
 int extract_queen_moves(ChessBoard *board, LookupTable *lookup, U64 *moves,
                         int move_p);
 
-// Knight move gen
-// TODO
-
 // King move gen
-// U64 get_king_moves_sq(ChessBoard *board, int sq);
-// int extract_king_moves_sq(ChessBoard *board, U64 *moves, int move_p,
-//                           U64 move_bb, int sq);
-// int extract_king_moves(ChessBoard *board, U64 *moves, int move_p);
+U64 get_king_moves_sq(ChessBoard *board, LookupTable *lookup, int sq);
+int extract_king_moves_sq(ChessBoard *board, U64 *moves, int move_p,
+                          U64 move_bb, int sq);
+int extract_king_moves(ChessBoard *board, LookupTable *lookup, U64 *moves,
+                       int move_p);
+
+// Knight move gen
+U64 get_knight_moves_sq(ChessBoard *board, LookupTable *lookup, int sq);
+int extract_knight_moves_sq(ChessBoard *board, U64 *moves, int move_p,
+                            U64 move_bb, int sq);
+int extract_knight_moves(ChessBoard *board, LookupTable *lookup, U64 *moves,
+                         int move_p);
 
 // Utilities
 U64 move_from_uci(ChessBoard *board, char *uci);

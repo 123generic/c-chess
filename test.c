@@ -237,7 +237,7 @@ void test_gen_occupancy_rook(void) {
     U64 expected;
     LookupTable lookup = {0};
 
-	init_LookupTable(&lookup);
+    init_LookupTable(&lookup);
 
     // Test 1: 12 bits on
     expected = make_bitboard(
@@ -329,8 +329,8 @@ void test_manual_gen_rook_moves(void) {
 void test_gen_occupancy_bishop(void) {
     U64 expected;
     LookupTable lookup = {0};
-	
-	init_LookupTable(&lookup);
+
+    init_LookupTable(&lookup);
 
     // Test 1
     expected = make_bitboard(
@@ -439,7 +439,7 @@ void test_manual_gen_bishop_moves(void) {
 
 void test_init_magic_rook(void) {
     LookupTable lookup = {0};
-	init_LookupTable(&lookup);
+    init_LookupTable(&lookup);
 
     // Test 1: Validate that the magic table produces the correct moves
     // for a rook on square 27 and square 28 for specific occupancy boards.
@@ -502,7 +502,7 @@ void test_init_magic_bishop(void) {
     int sq, ind;
 
     LookupTable lookup = {0};
-	init_LookupTable(&lookup);
+    init_LookupTable(&lookup);
 
     // Test 1
     occupancy = make_bitboard(
@@ -565,9 +565,9 @@ void test_extract_magic_moves_rook(void) {
     ChessBoard board;
     U64 moves[256] = {0};
     int move_p = 0;
-    
-	LookupTable lookup = {0};
-	init_LookupTable(&lookup);
+
+    LookupTable lookup = {0};
+    init_LookupTable(&lookup);
 
     // Test 1
     ChessBoard_from_FEN(
@@ -668,8 +668,8 @@ void test_extract_magic_moves_bishop(void) {
     U64 moves[256] = {0};
     int move_p = 0;
 
-	LookupTable lookup = {0};
-	init_LookupTable(&lookup);
+    LookupTable lookup = {0};
+    init_LookupTable(&lookup);
 
     // Test 1
     memset(moves, 0, sizeof(moves));
@@ -746,8 +746,8 @@ void test_extract_queen_moves(void) {
     U64 moves[256] = {0};
     int move_p = 0;
 
-	LookupTable lookup = {0};
-	init_LookupTable(&lookup);
+    LookupTable lookup = {0};
+    init_LookupTable(&lookup);
 
     // Test 1
     memset(moves, 0, sizeof(moves));
@@ -755,8 +755,7 @@ void test_extract_queen_moves(void) {
     ChessBoard_from_FEN(
         &board, "k5r1/Pp6/P1p1RRpb/4rpQq/2PB1pp1/1n2P1n1/1K1N3p/8 w - - 0 1");
 
-    move_p +=
-        extract_queen_moves(&board, &lookup, moves, move_p);
+    move_p += extract_queen_moves(&board, &lookup, moves, move_p);
 
     char expected_uci_1[][5] = {"g5g6", "g5g4", "g5f4", "g5f5",
                                 "g5h4", "g5h5", "g5h6"};
@@ -790,8 +789,7 @@ void test_extract_queen_moves(void) {
     ChessBoard_from_FEN(
         &board, "1N4RB/1p2KNp1/Rp3p2/1kp1bq1P/2nP1rP1/2P2Q1r/p7/4n3 b - - 0 1");
 
-    move_p +=
-        extract_queen_moves(&board, &lookup, moves, move_p);
+    move_p += extract_queen_moves(&board, &lookup, moves, move_p);
 
     char expected_uci_2[][5] = {"f5b1", "f5c2", "f5d3", "f5e4", "f5g6", "f5h7",
                                 "f5c8", "f5d7", "f5e6", "f5g4", "f5g5", "f5h5"};
@@ -822,10 +820,168 @@ void test_extract_queen_moves(void) {
     printf("test_extract_queen_moves: All tests passed.\n");
 }
 
+void test_extract_king_moves(void) {
+    ChessBoard board;
+    U64 moves[256] = {0};
+    int move_p = 0;
+
+    LookupTable lookup = {0};
+    init_LookupTable(&lookup);
+
+    // Test 1
+    memset(moves, 0, sizeof(moves));
+    move_p = 0;
+    ChessBoard_from_FEN(
+        &board, "8/bR4K1/P1p1bp1p/1nk1N3/5BP1/1PP1p1nQ/1P2BPP1/R2q4 w - - 0 1");
+
+    move_p += extract_king_moves(&board, &lookup, moves, move_p);
+
+    char expected_uci_1[][5] = {"g7f6", "g7g6", "g7h6", "g7h7",
+                                "g7h8", "g7g8", "g7f8", "g7f7"};
+    char actual_uci_1[sizeof(expected_uci_1) / sizeof(expected_uci_1[0])][5];
+
+    const size_t len1 = sizeof(expected_uci_1) / sizeof(expected_uci_1[0]);
+    if (move_p != len1) {
+        printf("[%s %s:%d] Test 1 failed.\n", __func__, __FILE__, __LINE__);
+        return;
+    }
+
+    for (int i = 0; i < move_p; i++) {
+        move_to_uci(moves[i], actual_uci_1[i]);
+    }
+
+    qsort(expected_uci_1, len1, sizeof(expected_uci_1[0]),
+          (int (*)(const void *, const void *))strcmp);
+    qsort(actual_uci_1, len1, sizeof(actual_uci_1[0]),
+          (int (*)(const void *, const void *))strcmp);
+
+    for (size_t i = 0; i < len1; i++) {
+        if (strcmp(expected_uci_1[i], actual_uci_1[i]) != 0) {
+            printf("[%s %s:%d] Test 1 failed.\n", __func__, __FILE__, __LINE__);
+            return;
+        }
+    }
+
+    // Test 2
+    memset(moves, 0, sizeof(moves));
+    move_p = 0;
+    ChessBoard_from_FEN(
+        &board,
+        "2B1nk1b/1pPR4/1P6/1r1p4/2p1pP1r/2QnNp2/1PR1b1P1/K3N3 b - - 0 1");
+
+    move_p += extract_king_moves(&board, &lookup, moves, move_p);
+
+    char expected_uci_2[][5] = {"f8e7", "f8f7", "f8g7", "f8g8"};
+    char actual_uci_2[sizeof(expected_uci_2) / sizeof(expected_uci_2[0])][5];
+
+    const size_t len2 = sizeof(expected_uci_2) / sizeof(expected_uci_2[0]);
+    if (move_p != len2) {
+        printf("[%s %s:%d] Test 2 failed.\n", __func__, __FILE__, __LINE__);
+        return;
+    }
+
+    for (int i = 0; i < move_p; i++) {
+        move_to_uci(moves[i], actual_uci_2[i]);
+    }
+
+    qsort(expected_uci_2, len2, sizeof(expected_uci_2[0]),
+          (int (*)(const void *, const void *))strcmp);
+    qsort(actual_uci_2, len2, sizeof(actual_uci_2[0]),
+          (int (*)(const void *, const void *))strcmp);
+
+    for (size_t i = 0; i < len2; i++) {
+        if (strcmp(expected_uci_2[i], actual_uci_2[i]) != 0) {
+            printf("[%s %s:%d] Test 2 failed.\n", __func__, __FILE__, __LINE__);
+            return;
+        }
+    }
+
+    printf("test_extract_king_moves: All tests passed.\n");
+}
+
+void test_extract_knight_moves(void) {
+    ChessBoard board;
+    U64 moves[256] = {0};
+    int move_p = 0;
+
+    LookupTable lookup = {0};
+    init_LookupTable(&lookup);
+
+    // Test 1
+    memset(moves, 0, sizeof(moves));
+    move_p = 0;
+    ChessBoard_from_FEN(
+        &board, "n7/1Pnp1p1b/2QNrbP1/1r3p1P/2PP2P1/kp5p/N2p3q/3K4 w - - 0 1");
+
+    move_p += extract_knight_moves(&board, &lookup, moves, move_p);
+
+    char expected_uci_1[][5] = {"a2b4", "a2c3", "a2c1", "d6c8", "d6e8",
+                                "d6f7", "d6f5", "d6e4", "d6b5"};
+    char actual_uci_1[sizeof(expected_uci_1) / sizeof(expected_uci_1[0])][5];
+
+    const size_t len1 = sizeof(expected_uci_1) / sizeof(expected_uci_1[0]);
+    if (move_p != len1) {
+        printf("[%s %s:%d] Test 1 failed.\n", __func__, __FILE__, __LINE__);
+        return;
+    }
+
+    for (int i = 0; i < move_p; i++) {
+        move_to_uci(moves[i], actual_uci_1[i]);
+    }
+
+    qsort(expected_uci_1, len1, sizeof(expected_uci_1[0]),
+          (int (*)(const void *, const void *))strcmp);
+    qsort(actual_uci_1, len1, sizeof(actual_uci_1[0]),
+          (int (*)(const void *, const void *))strcmp);
+
+    for (size_t i = 0; i < len1; i++) {
+        if (strcmp(expected_uci_1[i], actual_uci_1[i]) != 0) {
+            printf("[%s %s:%d] Test 1 failed.\n", __func__, __FILE__, __LINE__);
+            return;
+        }
+    }
+
+    // Test 2
+    memset(moves, 0, sizeof(moves));
+    move_p = 0;
+    ChessBoard_from_FEN(
+        &board,
+        "6N1/3p2Pp/3RBrk1/P1PPbq2/5pp1/2BPp3/1n2Pp2/QR3K2 b - - 0 1");
+
+    move_p += extract_knight_moves(&board, &lookup, moves, move_p);
+
+    char expected_uci_2[][5] = {"b2a4", "b2c4", "b2d3", "b2d1"};
+    char actual_uci_2[sizeof(expected_uci_2) / sizeof(expected_uci_2[0])][5];
+
+    const size_t len2 = sizeof(expected_uci_2) / sizeof(expected_uci_2[0]);
+    if (move_p != len2) {
+        printf("[%s %s:%d] Test 2 failed.\n", __func__, __FILE__, __LINE__);
+        return;
+    }
+
+    for (int i = 0; i < move_p; i++) {
+        move_to_uci(moves[i], actual_uci_2[i]);
+    }
+
+    qsort(expected_uci_2, len2, sizeof(expected_uci_2[0]),
+          (int (*)(const void *, const void *))strcmp);
+    qsort(actual_uci_2, len2, sizeof(actual_uci_2[0]),
+          (int (*)(const void *, const void *))strcmp);
+
+    for (size_t i = 0; i < len2; i++) {
+        if (strcmp(expected_uci_2[i], actual_uci_2[i]) != 0) {
+            printf("[%s %s:%d] Test 2 failed.\n", __func__, __FILE__, __LINE__);
+            return;
+        }
+    }
+
+    printf("test_extract_knight_moves: All tests passed.\n");
+}
+
 // Debugging with printf
 void debug_gen_occupancy_rook(void) {
     LookupTable lookup = {0};
-	init_LookupTable(&lookup);
+    init_LookupTable(&lookup);
 
     U64 *occupancy_mask = lookup.rook_mask;
 
@@ -840,7 +996,7 @@ void debug_gen_occupancy_rook(void) {
 
 void debug_find_magic_rook(void) {
     LookupTable lookup = {0};
-	init_LookupTable(&lookup);
+    init_LookupTable(&lookup);
 
     U64 magic;
     int sq;
@@ -873,6 +1029,8 @@ void unit_test(void) {
     test_extract_magic_moves_rook();
     test_extract_magic_moves_bishop();
     test_extract_queen_moves();
+    test_extract_king_moves();
+	test_extract_knight_moves();
 
     printf("Finished unit tests.\n");
 }
