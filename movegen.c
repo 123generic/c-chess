@@ -291,10 +291,10 @@ int extract_king_moves(ChessBoard *board, LookupTable *lookup, U64 *moves,
         num_moves += extract_king_moves_sq(board, moves, move_p + num_moves,
                                            king_moves, sq);
 
-		BB_CLEAR(bb, sq);
+        BB_CLEAR(bb, sq);
     }
 
-	return num_moves;
+    return num_moves;
 }
 
 // Knight generation
@@ -310,7 +310,7 @@ U64 get_knight_moves_sq(ChessBoard *board, LookupTable *lookup, int sq) {
 }
 
 int extract_knight_moves_sq(ChessBoard *board, U64 *moves, int move_p,
-                          U64 move_bb, int sq) {
+                            U64 move_bb, int sq) {
     int ind, to, piece, captured;
     int num_moves = 0;
 
@@ -330,7 +330,7 @@ int extract_knight_moves_sq(ChessBoard *board, U64 *moves, int move_p,
 }
 
 int extract_knight_moves(ChessBoard *board, LookupTable *lookup, U64 *moves,
-                       int move_p) {
+                         int move_p) {
     int sq, num_moves;
     U64 knight_moves, bb;
 
@@ -340,10 +340,10 @@ int extract_knight_moves(ChessBoard *board, LookupTable *lookup, U64 *moves,
     while ((sq = rightmost_set(bb)) != -1) {
         knight_moves = get_knight_moves_sq(board, lookup, sq);
         num_moves += extract_knight_moves_sq(board, moves, move_p + num_moves,
-                                           knight_moves, sq);
+                                             knight_moves, sq);
 
-		BB_CLEAR(bb, sq);
+        BB_CLEAR(bb, sq);
     }
 
-	return num_moves;
+    return num_moves;
 }

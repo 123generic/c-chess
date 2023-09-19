@@ -945,8 +945,7 @@ void test_extract_knight_moves(void) {
     memset(moves, 0, sizeof(moves));
     move_p = 0;
     ChessBoard_from_FEN(
-        &board,
-        "6N1/3p2Pp/3RBrk1/P1PPbq2/5pp1/2BPp3/1n2Pp2/QR3K2 b - - 0 1");
+        &board, "6N1/3p2Pp/3RBrk1/P1PPbq2/5pp1/2BPp3/1n2Pp2/QR3K2 b - - 0 1");
 
     move_p += extract_knight_moves(&board, &lookup, moves, move_p);
 
@@ -1030,7 +1029,7 @@ void unit_test(void) {
     test_extract_magic_moves_bishop();
     test_extract_queen_moves();
     test_extract_king_moves();
-	test_extract_knight_moves();
+    test_extract_knight_moves();
 
     printf("Finished unit tests.\n");
 }

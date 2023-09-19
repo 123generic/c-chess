@@ -46,12 +46,12 @@ typedef uint64_t U64;
 
 // Piece enum
 typedef enum {
-	pawn,
-	rook,
-	knight,
-	bishop,
-	queen,
-	king,
+    pawn,
+    rook,
+    knight,
+    bishop,
+    queen,
+    king,
 } Piece;
 
 #endif  // COMMON_H
