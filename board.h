@@ -48,8 +48,8 @@ typedef struct {
     int KC, QC, kc, qc;
 
     // EP
-    // bitboard location
-    int ep;  // square value 0-63, else -1
+	// -1 default; ep +- 1 are valid ep from squares
+    int ep;
 
     // Halfmove Clock
     int halfmove_clock;

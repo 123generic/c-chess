@@ -146,10 +146,18 @@ void ChessBoard_from_FEN(ChessBoard *board, char *fen) {
     if (fen[i] == '-') {
         i += 2;  // skip the dash and the space
     } else {
-        board->KC = fen[i++] == 'K';
-        board->QC = fen[i++] == 'Q';
-        board->kc = fen[i++] == 'k';
-        board->qc = fen[i++] == 'q';
+        board->KC = fen[i] == 'K';
+		if (board->KC) i++;
+
+        board->QC = fen[i] == 'Q';
+		if (board->QC) i++;
+
+        board->kc = fen[i] == 'k';
+		if (board->kc) i++;
+
+        board->qc = fen[i] == 'q';
+		if (board->qc) i++;
+		
         i++;  // space
     }
 
@@ -162,13 +170,28 @@ void ChessBoard_from_FEN(ChessBoard *board, char *fen) {
         i += 2;  // skip the dash and the space
     }
 
-    // Set fullmove clock
-    board->halfmove_clock = fen[i] - '0';
-    i += 2;  // skip the number and the space
-
     // Set halfmove clock
-    board->fullmove_number = fen[i] - '0';
-    i++;  // skip the number
+	board->halfmove_clock = 0;
+	while (fen[i] != ' ') {
+		board->halfmove_clock *= 10;
+		board->halfmove_clock += fen[i] - '0';
+		i++;
+	}
+	i++;
+
+	board->fullmove_number = 0;
+	int cnt = 0;
+	while (fen[i] != '\0') {
+		if (cnt > 2) {
+			fprintf(stderr, "Error: FEN string is invalid [%s(%s):%d]\n", __FILE__,
+					__func__, __LINE__);
+			exit(1);
+		}
+		board->fullmove_number *= 10;
+		board->fullmove_number += fen[i] - '0';
+		i++;
+		cnt++;
+	}
 
     // Check that we're done, or error
     if (fen[i] != '\0') {

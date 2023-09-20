@@ -12,9 +12,18 @@
 // 12-15: piece
 // 16-19: capture piece
 // 20-23: move type
+// 24-26: promote type
 
 typedef enum {
     SINGLE_PUSH,
+	DOUBLE_PUSH,
+	CAPTURE_LEFT,
+	CAPTURE_RIGHT,
+	PAWN_PROMOTION,
+	PROMOTION_CAPTURE_LEFT,
+	PROMOTION_CAPTURE_RIGHT,
+	EN_PASSANT_LEFT,
+	EN_PASSANT_RIGHT,
 } PawnMoveType;
 
 // Move Type (enum fits in 4 bits)

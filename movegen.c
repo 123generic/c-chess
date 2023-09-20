@@ -28,14 +28,40 @@ U64 move_from_uci(ChessBoard *board, char *uci) {
 // uci must have length 4+1 (or more)
 void move_to_uci(U64 move, char *uci) {
     int from, to;
+	MoveType type;
+	Piece p;
     from = move & 0x3f;
     to = (move >> 6) & 0x3f;
+	type = (move >> 20) & 0xf;
+	if (type == PROMOTION) {
+		p = (move >> 24) & 0x7;
+		switch (p) {
+			case queen:
+				uci[4] = 'q';
+				break;
+			case rook:
+				uci[4] = 'r';
+				break;
+			case bishop:
+				uci[4] = 'b';
+				break;
+			case knight:
+				uci[4] = 'n';
+				break;
+			default:
+				fprintf(stderr, "Error: Invalid promotion piece [%s(%s):%d]\n", __FILE__, __func__, __LINE__);
+				exit(1);
+		}
+
+		uci[5] = '\0';
+	} else {
+		uci[4] = '\0';
+	}
 
     uci[0] = 'a' + 7 - (from % 8);
     uci[1] = '1' + (from / 8);
     uci[2] = 'a' + 7 - (to % 8);
     uci[3] = '1' + (to / 8);
-    uci[4] = '\0';
 }
 
 int get_piece(Piece p, int wtm) {
@@ -76,16 +102,18 @@ U64 get_bb(ChessBoard *board, Piece p, int wtm) {
 // move_p points to the end of the moves array
 // moves is assumed to be large enough to hold all moves (256)
 U64 get_pawn_moves(ChessBoard *board, PawnMoveType move_type) {
-    U64 pawns, moved_pawns, rank_mask;
-    int wtm = board->white_to_move;
+    U64 pawns, moved_pawns, mask, sq;
+    int wtm;
+
+    moved_pawns = 0;
+    wtm = board->white_to_move;
+    pawns = wtm ? board->white_pawns : board->black_pawns;
 
     switch (move_type) {
         case SINGLE_PUSH:
-            pawns = wtm ? board->white_pawns : board->black_pawns;
-
             // no promotions
-            rank_mask = wtm ? RANK_7 : RANK_2;
-            moved_pawns = pawns & ~rank_mask;
+            mask = wtm ? RANK_7 : RANK_2;
+            moved_pawns = pawns & ~mask;
 
             // shift one rank up/down
             moved_pawns = wtm ? moved_pawns << 8 : moved_pawns >> 8;
@@ -94,10 +122,117 @@ U64 get_pawn_moves(ChessBoard *board, PawnMoveType move_type) {
             moved_pawns = moved_pawns & ~board->all_pieces;
             break;
 
-        default:
-            printf("Error: Unimplemented pawn move type [%s(%s):%d]\n",
-                   __FILE__, __func__, __LINE__);
-            exit(1);
+        case DOUBLE_PUSH:
+            // only starting rank
+            mask = wtm ? RANK_2 : RANK_7;
+            moved_pawns = pawns & mask;
+
+            // shift up/down
+            moved_pawns = wtm ? moved_pawns << 8 : moved_pawns >> 8;
+
+            // don't push into pieces
+            moved_pawns &= ~board->all_pieces;
+
+            // repeat
+            moved_pawns = wtm ? moved_pawns << 8 : moved_pawns >> 8;
+            moved_pawns &= ~board->all_pieces;
+            break;
+
+        // Note: left relative to white player
+        case CAPTURE_LEFT:
+            // no promotions
+            mask = wtm ? RANK_7 : RANK_2;
+            moved_pawns = pawns & ~mask;
+
+            // Not file A
+            moved_pawns = moved_pawns & ~FILE_1;
+
+            // shift
+            moved_pawns = wtm ? moved_pawns << 9 : moved_pawns >> 7;
+
+            // mask enemies
+            moved_pawns &= wtm ? board->black_pieces : board->white_pieces;
+            break;
+
+        // Note: right relative to white player
+        case CAPTURE_RIGHT:
+            // no promotions
+            mask = wtm ? RANK_7 : RANK_2;
+            moved_pawns = pawns & ~mask;
+
+            // Not file H
+            moved_pawns = moved_pawns & ~FILE_8;
+
+            // shift
+            moved_pawns = wtm ? moved_pawns << 7 : moved_pawns >> 9;
+
+            // mask enemies
+            moved_pawns &= wtm ? board->black_pieces : board->white_pieces;
+            break;
+
+        case PAWN_PROMOTION:
+            // promotion rank
+            mask = wtm ? RANK_7 : RANK_2;
+            moved_pawns = pawns & mask;
+
+            // shift
+            moved_pawns = wtm ? moved_pawns << 8 : moved_pawns >> 8;
+
+            // mask pieces
+            moved_pawns &= ~(board->all_pieces);
+            break;
+
+        case PROMOTION_CAPTURE_LEFT:
+            // promotion rank
+            mask = wtm ? RANK_7 : RANK_2;
+            moved_pawns = pawns & mask;
+
+            // shift left
+            moved_pawns = wtm ? moved_pawns << 9 : moved_pawns >> 7;
+
+            // mask enemies
+            moved_pawns &= wtm ? board->black_pieces : board->white_pieces;
+            break;
+
+        case PROMOTION_CAPTURE_RIGHT:
+            // promotion rank
+            mask = wtm ? RANK_7 : RANK_2;
+            moved_pawns = pawns & mask;
+
+            // shift left
+            moved_pawns = wtm ? moved_pawns << 7 : moved_pawns >> 9;
+
+            // mask enemies
+            moved_pawns &= wtm ? board->black_pieces : board->white_pieces;
+            break;
+
+        case EN_PASSANT_LEFT:
+            // ep only
+            if (board->ep == -1) {
+                moved_pawns = 0;
+            } else {
+                sq = wtm ? board->ep - 9 : board->ep + 7;
+                mask = wtm ? RANK_5 : RANK_4;
+
+                moved_pawns = pawns & (1ULL << sq);
+                moved_pawns &= mask;
+                moved_pawns = wtm ? moved_pawns << 9 : moved_pawns >> 7;
+            }
+            break;
+
+        case EN_PASSANT_RIGHT:
+            // ep only
+            if (board->ep == -1) {
+                moved_pawns = 0;
+            } else {
+                sq = wtm ? board->ep - 7 : board->ep + 9;
+                mask = wtm ? RANK_5 : RANK_4;
+
+                moved_pawns = pawns & (1ULL << sq);
+                moved_pawns &= mask;
+                moved_pawns = wtm ? moved_pawns << 7 : moved_pawns >> 9;
+            }
+            break;
     }
 
     return moved_pawns;
@@ -112,29 +247,141 @@ int extract_pawn_moves(ChessBoard *board, U64 *moves, int move_p,
     switch (move_type) {
         case SINGLE_PUSH:
             while ((ind = rightmost_set(pawn_moves)) != -1) {
-                // this means the move is ind + 8 -> ind
                 to = ind;
                 from = wtm ? ind - 8 : ind + 8;
                 piece = wtm ? WHITE_PAWN : BLACK_PAWN;
                 captured = EMPTY_SQ;
                 moves[move_p + num_moves] = from | to << 6 | piece << 12 |
-                                            captured << 16 | move_type << 20;
+                                            captured << 16 | NORMAL << 20;
                 num_moves++;
                 BB_CLEAR(pawn_moves, ind);
             }
             break;
 
-        default:
-            printf("Error: Unimplemented pawn move type [%s(%s):%d]\n",
-                   __FILE__, __func__, __LINE__);
-            exit(1);
+        case DOUBLE_PUSH:
+            while ((ind = rightmost_set(pawn_moves)) != -1) {
+                to = ind;
+                from = wtm ? ind - 16 : ind + 16;
+                piece = wtm ? WHITE_PAWN : BLACK_PAWN;
+                captured = EMPTY_SQ;
+                moves[move_p + num_moves] = from | to << 6 | piece << 12 |
+                                            captured << 16 | NORMAL << 20;
+                num_moves++;
+                BB_CLEAR(pawn_moves, ind);
+            }
+            break;
+
+        case CAPTURE_LEFT:
+            while ((ind = rightmost_set(pawn_moves)) != -1) {
+                to = ind;
+                from = wtm ? ind - 9 : ind + 7;
+                piece = wtm ? WHITE_PAWN : BLACK_PAWN;
+                captured = ChessBoard_piece_at(board, to);
+                moves[move_p + num_moves] = from | to << 6 | piece << 12 |
+                                            captured << 16 | NORMAL << 20;
+                num_moves++;
+                BB_CLEAR(pawn_moves, ind);
+            }
+            break;
+
+        case CAPTURE_RIGHT:
+            while ((ind = rightmost_set(pawn_moves)) != -1) {
+                to = ind;
+                from = wtm ? ind - 7 : ind + 9;
+                piece = wtm ? WHITE_PAWN : BLACK_PAWN;
+                captured = ChessBoard_piece_at(board, to);
+                moves[move_p + num_moves] = from | to << 6 | piece << 12 |
+                                            captured << 16 | NORMAL << 20;
+                num_moves++;
+                BB_CLEAR(pawn_moves, ind);
+            }
+            break;
+
+        case PAWN_PROMOTION:
+            while ((ind = rightmost_set(pawn_moves)) != -1) {
+                to = ind;
+                from = wtm ? ind - 8 : ind + 8;
+                piece = wtm ? WHITE_PAWN : BLACK_PAWN;
+                captured = EMPTY_SQ;
+
+                int promote[4] = {queen, rook, bishop, knight};
+                for (int i = 0; i < 4; i++) {
+                    moves[move_p + num_moves] =
+                        from | to << 6 | piece << 12 | captured << 16 |
+                        PROMOTION << 20 | promote[i] << 24;
+                    num_moves++;
+                }
+                BB_CLEAR(pawn_moves, ind);
+            }
+            break;
+
+        case PROMOTION_CAPTURE_LEFT:
+            while ((ind = rightmost_set(pawn_moves)) != -1) {
+                to = ind;
+                from = wtm ? ind - 9 : ind + 7;
+                piece = wtm ? WHITE_PAWN : BLACK_PAWN;
+                captured = ChessBoard_piece_at(board, to);
+
+                int promote[4] = {queen, rook, bishop, knight};
+                for (int i = 0; i < 4; i++) {
+                    moves[move_p + num_moves] =
+                        from | to << 6 | piece << 12 | captured << 16 |
+                        PROMOTION << 20 | promote[i] << 24;
+                    num_moves++;
+                }
+                BB_CLEAR(pawn_moves, ind);
+            }
+            break;
+
+        case PROMOTION_CAPTURE_RIGHT:
+            while ((ind = rightmost_set(pawn_moves)) != -1) {
+                to = ind;
+                from = wtm ? ind - 7 : ind + 9;
+                piece = wtm ? WHITE_PAWN : BLACK_PAWN;
+                captured = ChessBoard_piece_at(board, to);
+
+                int promote[4] = {queen, rook, bishop, knight};
+                for (int i = 0; i < 4; i++) {
+                    moves[move_p + num_moves] =
+                        from | to << 6 | piece << 12 | captured << 16 |
+                        PROMOTION << 20 | promote[i] << 24;
+                    num_moves++;
+                }
+                BB_CLEAR(pawn_moves, ind);
+            }
+            break;
+
+        case EN_PASSANT_LEFT:
+            if (pawn_moves == 0) break;
+            ind = rightmost_set(pawn_moves);
+            to = ind;
+            from = wtm ? ind - 9 : ind + 7;
+            piece = wtm ? WHITE_PAWN : BLACK_PAWN;
+            captured = wtm ? BLACK_PAWN : WHITE_PAWN;
+
+            moves[move_p + num_moves] = from | to << 6 | piece << 12 |
+                                        captured << 16 | EN_PASSANT << 20;
+            num_moves++;
+            break;
+
+        case EN_PASSANT_RIGHT:
+            if (pawn_moves == 0) break;
+            ind = rightmost_set(pawn_moves);
+            to = ind;
+            from = wtm ? ind - 7 : ind + 9;
+            piece = wtm ? WHITE_PAWN : BLACK_PAWN;
+            captured = wtm ? BLACK_PAWN : WHITE_PAWN;
+
+            moves[move_p + num_moves] = from | to << 6 | piece << 12 |
+                                        captured << 16 | EN_PASSANT << 20;
+            num_moves++;
+            break;
     }
 
     return num_moves;
 }
 
 // Magic Generation
-// board[sq] should, of course, have a rook on it
 U64 get_magic_moves_sq(ChessBoard *board, LookupTable *lookup, int sq,
                        Piece piece) {
     U64 pieces, mask, magic, moves, friendlies;
