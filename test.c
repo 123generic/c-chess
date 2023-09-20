@@ -1328,8 +1328,8 @@ void test_pawn_ep(void) {
         "rnbqkbnr/1p2p1pp/8/pPppPp2/8/8/P1PP1PPP/RNBQKBNR w KQkq c6 0 5");
 
     move_bb = get_pawn_moves(&board, EN_PASSANT_RIGHT);
-    move_p += extract_pawn_moves(&board, moves, move_p, move_bb,
-                                 EN_PASSANT_RIGHT);
+    move_p +=
+        extract_pawn_moves(&board, moves, move_p, move_bb, EN_PASSANT_RIGHT);
 
     char expected_uci_1[][6] = {"b5c6"};
     char actual_uci_1[sizeof(expected_uci_1) / sizeof(expected_uci_1[0])][6];
@@ -1364,8 +1364,8 @@ void test_pawn_ep(void) {
         "rnbqkbnr/1p2p1p1/8/pPppPp2/2B3Pp/7P/P1PP1P2/RNBQK1NR b KQkq g3 0 7");
 
     move_bb = get_pawn_moves(&board, EN_PASSANT_LEFT);
-    move_p += extract_pawn_moves(&board, moves, move_p, move_bb,
-                                 EN_PASSANT_LEFT);
+    move_p +=
+        extract_pawn_moves(&board, moves, move_p, move_bb, EN_PASSANT_LEFT);
 
     char expected_uci_2[][6] = {"h4g3"};
     char actual_uci_2[sizeof(expected_uci_2) / sizeof(expected_uci_2[0])][6];
@@ -1400,8 +1400,8 @@ void test_pawn_ep(void) {
         "rnbq1bn1/1p1kp2r/8/pPpBPppP/8/6p1/P1PP1P2/RNBQK1NR w KQ g6 0 11");
 
     move_bb = get_pawn_moves(&board, EN_PASSANT_LEFT);
-    move_p += extract_pawn_moves(&board, moves, move_p, move_bb,
-                                 EN_PASSANT_LEFT);
+    move_p +=
+        extract_pawn_moves(&board, moves, move_p, move_bb, EN_PASSANT_LEFT);
 
     char expected_uci_3[][6] = {"h5g6"};
     char actual_uci_3[sizeof(expected_uci_3) / sizeof(expected_uci_3[0])][6];
@@ -1488,8 +1488,8 @@ void unit_test(void) {
     test_pawn_double_push();
     test_pawn_capture();
     test_pawn_promote();
-	test_pawn_promote_capture();
-	test_pawn_ep();
+    test_pawn_promote_capture();
+    test_pawn_ep();
 
     printf("Finished unit tests.\n");
 }

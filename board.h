@@ -48,7 +48,7 @@ typedef struct {
     int KC, QC, kc, qc;
 
     // EP
-	// -1 default; ep +- 1 are valid ep from squares
+    // -1 default; ep +- 1 are valid ep from squares
     int ep;
 
     // Halfmove Clock

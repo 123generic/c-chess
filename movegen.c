@@ -28,35 +28,36 @@ U64 move_from_uci(ChessBoard *board, char *uci) {
 // uci must have length 4+1 (or more)
 void move_to_uci(U64 move, char *uci) {
     int from, to;
-	MoveType type;
-	Piece p;
+    MoveType type;
+    Piece p;
     from = move & 0x3f;
     to = (move >> 6) & 0x3f;
-	type = (move >> 20) & 0xf;
-	if (type == PROMOTION) {
-		p = (move >> 24) & 0x7;
-		switch (p) {
-			case queen:
-				uci[4] = 'q';
-				break;
-			case rook:
-				uci[4] = 'r';
-				break;
-			case bishop:
-				uci[4] = 'b';
-				break;
-			case knight:
-				uci[4] = 'n';
-				break;
-			default:
-				fprintf(stderr, "Error: Invalid promotion piece [%s(%s):%d]\n", __FILE__, __func__, __LINE__);
-				exit(1);
-		}
+    type = (move >> 20) & 0xf;
+    if (type == PROMOTION) {
+        p = (move >> 24) & 0x7;
+        switch (p) {
+            case queen:
+                uci[4] = 'q';
+                break;
+            case rook:
+                uci[4] = 'r';
+                break;
+            case bishop:
+                uci[4] = 'b';
+                break;
+            case knight:
+                uci[4] = 'n';
+                break;
+            default:
+                fprintf(stderr, "Error: Invalid promotion piece [%s(%s):%d]\n",
+                        __FILE__, __func__, __LINE__);
+                exit(1);
+        }
 
-		uci[5] = '\0';
-	} else {
-		uci[4] = '\0';
-	}
+        uci[5] = '\0';
+    } else {
+        uci[4] = '\0';
+    }
 
     uci[0] = 'a' + 7 - (from % 8);
     uci[1] = '1' + (from / 8);
