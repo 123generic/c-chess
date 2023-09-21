@@ -1431,6 +1431,79 @@ void test_pawn_ep(void) {
     printf("%s: All tests passed.\n", __func__);
 }
 
+int run_single_test(LookupTable *lookup, char *fen, char expected_uci[][6],
+                    int len) {
+    ChessBoard board;
+    ChessBoard_from_FEN(&board, fen);
+
+    U64 attacked = attackers(&board, lookup);
+
+    U64 moves[256] = {0};
+    int move_p = 0;
+
+    char actual_uci[256][6];
+
+    move_p += gen_castling(&board, moves, attacked, move_p);
+
+    if (len != move_p) {
+        return 0;
+    }
+
+    for (int i = 0; i < move_p; i++) {
+        move_to_uci(moves[i], actual_uci[i]);
+    }
+
+    qsort(expected_uci, len, sizeof(expected_uci[0]),
+          (int (*)(const void *, const void *))strcmp);
+    qsort(actual_uci, len, sizeof(actual_uci[0]),
+          (int (*)(const void *, const void *))strcmp);
+
+    for (int i = 0; i < len; i++) {
+        if (strcmp(expected_uci[i], actual_uci[i]) != 0) {
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+void test_gen_castling(void) {
+    LookupTable lookup = {0};
+    init_LookupTable(&lookup);
+
+    // Test 1
+    char expected_1[][6] = {"e1c1", "e1g1"};
+    if (!run_single_test(&lookup,
+                         "r3k2r/pppb1ppp/1nqp1b2/3np3/3PPB1B/2NP1QN1/PPP3PP/"
+                         "R3K2R w KQkq - 4 6",
+                         expected_1, 2)) {
+        printf("[%s %s:%d] Test 1 failed.\n", __func__, __FILE__, __LINE__);
+        return;
+    }
+
+    // Test 2
+    char expected_2[][6] = {"e8c8"};
+    if (!run_single_test(&lookup,
+                         "r3k2r/pppb1ppp/1nqp1b2/3np3/3PPB1B/2NP1QN1/PPP3PP/"
+                         "R3K2R b Qq - 4 6",
+                         expected_2, 1)) {
+        printf("[%s %s:%d] Test 2 failed.\n", __func__, __FILE__, __LINE__);
+        return;
+    }
+
+    // Test 3
+    char expected_3[][6] = {"e1c1"};
+    if (!run_single_test(&lookup,
+                         "r1N1k2r/pppb1ppp/1nqp1b2/3np3/3PPB1B/3P2N1/PPP3PP/"
+                         "R3KQ1R w KQkq - 4 6",
+                         expected_3, 1)) {
+        printf("[%s %s:%d] Test 3 failed.\n", __func__, __FILE__, __LINE__);
+        return;
+    }
+
+    printf("%s: All tests passed.\n", __func__);
+}
+
 // Debugging with printf
 void debug_gen_occupancy_rook(void) {
     LookupTable lookup = {0};
@@ -1490,6 +1563,7 @@ void unit_test(void) {
     test_pawn_promote();
     test_pawn_promote_capture();
     test_pawn_ep();
+    test_gen_castling();
 
     printf("Finished unit tests.\n");
 }

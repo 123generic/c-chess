@@ -55,20 +55,7 @@ U64 make_bitboard(char *str) {
 
 // ChessBoard
 void init_ChessBoard(ChessBoard *board) {
-    board->white_pawns = 0xff000000000000;
-    board->white_rooks = 0x8100000000000000;
-    board->white_knights = 0x4200000000000000;
-    board->white_bishops = 0x2400000000000000;
-    board->white_queens = 0x1000000000000000;
-    board->white_king = 0x800000000000000;
-    board->black_pawns = 0xff00;
-    board->black_rooks = 0x81;
-    board->black_knights = 0x42;
-    board->black_bishops = 0x24;
-    board->black_queens = 0x10;
-    board->black_king = 0x8;
-
-    board->white_to_move = 1;  // True
+    ChessBoard_from_FEN(board, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 }
 
 // This function will break if FEN is invalid lol

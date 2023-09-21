@@ -71,6 +71,12 @@ int extract_knight_moves_sq(ChessBoard *board, U64 *moves, int move_p,
 int extract_knight_moves(ChessBoard *board, LookupTable *lookup, U64 *moves,
                          int move_p);
 
+// Castling
+int gen_castling(ChessBoard *board, U64 *moves, U64 attacked, int move_p);
+
+// Attackers
+U64 attackers(ChessBoard *board, LookupTable *lookup);
+
 // Utilities
 U64 move_from_uci(ChessBoard *board, char *uci);
 void move_to_uci(U64 move, char *uci);

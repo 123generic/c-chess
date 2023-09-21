@@ -37,6 +37,7 @@ typedef struct {
     U64 black_queens;
     U64 black_king;
 
+	// Extra boards
     U64 white_pieces;
     U64 black_pieces;
     U64 all_pieces;
