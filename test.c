@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include "board.h"
 #include "common.h"
@@ -1505,35 +1506,36 @@ void test_gen_castling(void) {
     printf("%s: All tests passed.\n", __func__);
 }
 
-void test_generate_moves_ind(void) {
-    LookupTable lookup = {0};
-    init_LookupTable(&lookup);
+void test_is_legal(void) {
+	ChessBoard board;
+	LookupTable lookup = {0};
+	init_LookupTable(&lookup);
 
-    ChessBoard board;
-    U64 attacked;
+    // Test 1
+    char fen1[] = "2B2k2/pqPPp2p/p1pPr2N/p1P5/1Rb1P2r/1NpP1nbP/p2nQKP1/2R1B3 w - - 0 1";
+    ChessBoard_from_FEN(&board, fen1);
+    assert(!is_legal(&board, attackers(&board, &lookup, !board.white_to_move)));
 
-    U64 moves[256] = {0};
-    char ascii_moves[256][6] = {0};
-    int num_moves = 0;
+    // Test 2
+    char fen2[] = "2B2k2/pqPPp2p/p1pPr2N/p1P5/1Rb1P2r/1NpP1n1P/p2nQKPb/2R1B3 w - - 0 1";
+    ChessBoard_from_FEN(&board, fen2);
+    assert(is_legal(&board, attackers(&board, &lookup, !board.white_to_move)));
 
-    ChessBoard_from_FEN(
-        &board,
-        "r1B3n1/pb2k3/3n1p1p/b2q3P/1P1Pp1rR/4Q3/P3KPP1/RN3B2 b - - 0 24");
-	int side = board.white_to_move ? BLACK : WHITE;
-    attacked = attackers(&board, &lookup, side);
+	// Test 3
+	char fen3[] = "K4BR1/p1pr4/1Pr1pk1p/PnP2P1p/4N1Pp/PRqp3b/PNBbPp1n/5Q2 b - - 0 1";
+	ChessBoard_from_FEN(&board, fen3);
+	assert(!is_legal(&board, attackers(&board, &lookup, !board.white_to_move)));
 
-    MoveGenStage stage[] = {promotions, captures, castling, quiets};
-    int len = sizeof(stage) / sizeof(stage[0]);
-    for (int i = 0; i < len; i++) {
-        num_moves += generate_moves(&board, &lookup, moves + num_moves, attacked, stage[i]);
-    }
+	// Test 4
+	char fen4[] = "K4BR1/p1pr4/1Pr1pk1p/PnP2P1p/5NPp/PRqp3b/PNBbPp1n/5Q2 b - - 0 1";
+	ChessBoard_from_FEN(&board, fen4);
+	assert(is_legal(&board, attackers(&board, &lookup, !board.white_to_move)));
 
-    for (int i = 0; i < num_moves; i++) {
-        move_to_uci(moves[i], ascii_moves[i]);
-    }
+    printf("%s: All tests passed.\n", __func__);
 }
 
-void test_generate_moves(void) {
+
+void fuzz_generate_moves(void) {
     LookupTable lookup = {0};
     init_LookupTable(&lookup);
 
@@ -1614,37 +1616,36 @@ void debug_find_magic_rook(void) {
 }
 
 void unit_test(void) {
-    // test_rightmost_set();
+    test_rightmost_set();
 
-    // test_ChessBoard_str();
-    // test_ChessBoard_to_FEN();
+    test_ChessBoard_str();
+    test_ChessBoard_to_FEN();
 
-    // test_extract_pawn_moves();
+    test_extract_pawn_moves();
 
-    // test_gen_occupancy_rook();
-    // test_manual_gen_rook_moves();
+    test_gen_occupancy_rook();
+    test_manual_gen_rook_moves();
 
-    // test_gen_occupancy_bishop();
-    // test_manual_gen_bishop_moves();
+    test_gen_occupancy_bishop();
+    test_manual_gen_bishop_moves();
 
-    // test_init_magic_rook();
-    // test_init_magic_bishop();
+    test_init_magic_rook();
+    test_init_magic_bishop();
 
-    // test_extract_magic_moves_rook();
-    // test_extract_magic_moves_bishop();
-    // test_extract_queen_moves();
-    // test_extract_king_moves();
-    // test_extract_knight_moves();
+    test_extract_magic_moves_rook();
+    test_extract_magic_moves_bishop();
+    test_extract_queen_moves();
+    test_extract_king_moves();
+    test_extract_knight_moves();
 
-    // test_pawn_double_push();
-    // test_pawn_capture();
-    // test_pawn_promote();
-    // test_pawn_promote_capture();
-    // test_pawn_ep();
-    // test_gen_castling();
+    test_pawn_double_push();
+    test_pawn_capture();
+    test_pawn_promote();
+    test_pawn_promote_capture();
+    test_pawn_ep();
+    test_gen_castling();
 
-    test_generate_moves();
-    // test_generate_moves_ind();
+	test_is_legal();
 
     printf("Finished unit tests.\n");
 }
@@ -1657,10 +1658,15 @@ void debug_print(void) {
     debug_find_magic_rook();
 }
 
+void fuzz(void) {
+	fuzz_generate_moves();
+}
+
 int main(void) {
     init_genrand64(0x8c364d19345930e2);  // drawn on random day
 
     // debug_print();
+	// fuzz();
     unit_test();
     return 0;
 }
