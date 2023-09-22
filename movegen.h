@@ -62,7 +62,8 @@ int extract_all_moves(ChessBoard *board, LookupTable *table, U64 *moves,
 int generate_castling(ChessBoard *board, U64 *moves, U64 attacked, int move_p);
 
 // Attackers
-U64 attackers(ChessBoard *board, LookupTable *lookup);
+U64 get_attacks(ChessBoard *board, LookupTable *lookup, int sq, Piece p);
+U64 attackers(ChessBoard *board, LookupTable *lookup, int side);
 
 // Move Generation
 int generate_promotions(ChessBoard *board, U64 *moves);
