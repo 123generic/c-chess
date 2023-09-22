@@ -37,45 +37,40 @@ typedef enum {
     UNKNOWN,
 } MoveType;
 
+// Move Generation Stage
+typedef enum {
+    promotions,
+    captures,
+    castling,
+    quiets,
+    losing,
+} MoveGenStage;
+
 // Pawns
 U64 get_pawn_moves(ChessBoard *board, PawnMoveType move_type);
 int extract_pawn_moves(ChessBoard *board, U64 *moves, int move_p,
                        U64 pawn_moves, PawnMoveType move_type);
 
-// Magic move gen
-U64 get_magic_moves_sq(ChessBoard *board, LookupTable *lookup, int sq,
-                       Piece piece);
-int extract_magic_moves_sq(ChessBoard *board, U64 *moves, int move_p,
-                           U64 magic_moves, int sq, Piece p);
-int extract_magic_moves(ChessBoard *board, LookupTable *lookup, U64 *moves,
-                        int move_p, Piece p);
-
-// Queen move gen
-U64 get_queen_moves_sq(ChessBoard *board, LookupTable *lookup, int sq);
-int extract_queen_moves_sq(ChessBoard *board, U64 *moves, int move_p,
-                           U64 move_bb, int sq);
-int extract_queen_moves(ChessBoard *board, LookupTable *lookup, U64 *moves,
-                        int move_p);
-
-// King move gen
-U64 get_king_moves_sq(ChessBoard *board, LookupTable *lookup, int sq);
-int extract_king_moves_sq(ChessBoard *board, U64 *moves, int move_p,
-                          U64 move_bb, int sq);
-int extract_king_moves(ChessBoard *board, LookupTable *lookup, U64 *moves,
-                       int move_p);
-
-// Knight move gen
-U64 get_knight_moves_sq(ChessBoard *board, LookupTable *lookup, int sq);
-int extract_knight_moves_sq(ChessBoard *board, U64 *moves, int move_p,
-                            U64 move_bb, int sq);
-int extract_knight_moves(ChessBoard *board, LookupTable *lookup, U64 *moves,
-                         int move_p);
+// Other pieces
+U64 get_moves(ChessBoard *board, LookupTable *lookup, int sq, Piece p);
+int extract_moves(ChessBoard *board, U64 *moves, int move_p, U64 move_bb,
+                  int sq, Piece p, int quiet);
+int extract_all_moves(ChessBoard *board, LookupTable *table, U64 *moves,
+                      int move_p, Piece p);
 
 // Castling
-int gen_castling(ChessBoard *board, U64 *moves, U64 attacked, int move_p);
+int generate_castling(ChessBoard *board, U64 *moves, U64 attacked, int move_p);
 
 // Attackers
 U64 attackers(ChessBoard *board, LookupTable *lookup);
+
+// Move Generation
+int generate_promotions(ChessBoard *board, U64 *moves);
+int generate_normal_moves_pawn(ChessBoard *board, U64 *moves, int quiet);
+int generate_normal_moves(ChessBoard *board, LookupTable *table, U64 *moves,
+                          int quiet);
+int generate_moves(ChessBoard *board, LookupTable *table, U64 *moves,
+                   U64 attackers, MoveGenStage stage);
 
 // Utilities
 U64 move_from_uci(ChessBoard *board, char *uci);

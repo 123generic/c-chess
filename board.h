@@ -12,9 +12,6 @@
 // Board get macros
 #define BOARD_GET(side, piece) (board->side##_##piece)
 
-// Coordinate system interchange
-// TODO
-
 // Bitboard Helpers
 int rightmost_set(U64 bb);
 void print_bb(U64 bb);

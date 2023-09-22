@@ -100,8 +100,6 @@ U64 get_bb(ChessBoard *board, Piece p, int wtm) {
 }
 
 // Pawn generation
-// move_p points to the end of the moves array
-// moves is assumed to be large enough to hold all moves (256)
 U64 get_pawn_moves(ChessBoard *board, PawnMoveType move_type) {
     U64 pawns, moved_pawns, mask, sq;
     int wtm;
@@ -112,103 +110,62 @@ U64 get_pawn_moves(ChessBoard *board, PawnMoveType move_type) {
 
     switch (move_type) {
         case SINGLE_PUSH:
-            // no promotions
             mask = wtm ? RANK_7 : RANK_2;
             moved_pawns = pawns & ~mask;
-
-            // shift one rank up/down
             moved_pawns = wtm ? moved_pawns << 8 : moved_pawns >> 8;
-
-            // don't push into pieces
             moved_pawns = moved_pawns & ~board->all_pieces;
             break;
 
         case DOUBLE_PUSH:
-            // only starting rank
             mask = wtm ? RANK_2 : RANK_7;
             moved_pawns = pawns & mask;
 
-            // shift up/down
             moved_pawns = wtm ? moved_pawns << 8 : moved_pawns >> 8;
-
-            // don't push into pieces
             moved_pawns &= ~board->all_pieces;
 
-            // repeat
             moved_pawns = wtm ? moved_pawns << 8 : moved_pawns >> 8;
             moved_pawns &= ~board->all_pieces;
             break;
 
         // Note: left relative to white player
         case CAPTURE_LEFT:
-            // no promotions
             mask = wtm ? RANK_7 : RANK_2;
             moved_pawns = pawns & ~mask;
-
-            // Not file A
             moved_pawns = moved_pawns & ~FILE_1;
-
-            // shift
             moved_pawns = wtm ? moved_pawns << 9 : moved_pawns >> 7;
-
-            // mask enemies
             moved_pawns &= wtm ? board->black_pieces : board->white_pieces;
             break;
 
-        // Note: right relative to white player
         case CAPTURE_RIGHT:
-            // no promotions
             mask = wtm ? RANK_7 : RANK_2;
             moved_pawns = pawns & ~mask;
-
-            // Not file H
             moved_pawns = moved_pawns & ~FILE_8;
-
-            // shift
             moved_pawns = wtm ? moved_pawns << 7 : moved_pawns >> 9;
-
-            // mask enemies
             moved_pawns &= wtm ? board->black_pieces : board->white_pieces;
             break;
 
         case PAWN_PROMOTION:
-            // promotion rank
             mask = wtm ? RANK_7 : RANK_2;
             moved_pawns = pawns & mask;
-
-            // shift
             moved_pawns = wtm ? moved_pawns << 8 : moved_pawns >> 8;
-
-            // mask pieces
             moved_pawns &= ~(board->all_pieces);
             break;
 
         case PROMOTION_CAPTURE_LEFT:
-            // promotion rank
             mask = wtm ? RANK_7 : RANK_2;
             moved_pawns = pawns & mask;
-
-            // shift left
             moved_pawns = wtm ? moved_pawns << 9 : moved_pawns >> 7;
-
-            // mask enemies
             moved_pawns &= wtm ? board->black_pieces : board->white_pieces;
             break;
 
         case PROMOTION_CAPTURE_RIGHT:
-            // promotion rank
             mask = wtm ? RANK_7 : RANK_2;
             moved_pawns = pawns & mask;
-
-            // shift left
             moved_pawns = wtm ? moved_pawns << 7 : moved_pawns >> 9;
-
-            // mask enemies
             moved_pawns &= wtm ? board->black_pieces : board->white_pieces;
             break;
 
         case EN_PASSANT_LEFT:
-            // ep only
             if (board->ep == -1) {
                 moved_pawns = 0;
             } else {
@@ -222,7 +179,6 @@ U64 get_pawn_moves(ChessBoard *board, PawnMoveType move_type) {
             break;
 
         case EN_PASSANT_RIGHT:
-            // ep only
             if (board->ep == -1) {
                 moved_pawns = 0;
             } else {
@@ -382,213 +338,100 @@ int extract_pawn_moves(ChessBoard *board, U64 *moves, int move_p,
     return num_moves;
 }
 
-// Magic Generation
-U64 get_magic_moves_sq(ChessBoard *board, LookupTable *lookup, int sq,
-                       Piece piece) {
+// Non-pawn move extraction
+U64 get_moves(ChessBoard *board, LookupTable *lookup, int sq, Piece p) {
     U64 pieces, mask, magic, moves, friendlies;
     int ind, shift_amt;
 
     pieces = board->all_pieces;
-    if (piece == rook) {
-        mask = lookup->rook_mask[sq];
-        magic = lookup->rook_magic[sq];
-        shift_amt = 64 - 12;
-
-        ind = ((pieces & mask) * magic) >> shift_amt;
-        moves = lookup->rook_move[4096 * sq + ind];
-    } else {
-        mask = lookup->bishop_mask[sq];
-        magic = lookup->bishop_magic[sq];
-        shift_amt = 64 - 9;
-
-        ind = ((pieces & mask) * magic) >> shift_amt;
-        moves = lookup->bishop_move[512 * sq + ind];
-    }
-
     friendlies =
         board->white_to_move ? board->white_pieces : board->black_pieces;
-    moves &= (~friendlies);
+
+    switch (p) {
+        case rook:
+            mask = lookup->rook_mask[sq];
+            magic = lookup->rook_magic[sq];
+            shift_amt = 64 - 12;
+
+            ind = ((pieces & mask) * magic) >> shift_amt;
+            moves = lookup->rook_move[4096 * sq + ind];
+            moves &= ~friendlies;
+            break;
+
+        case bishop:
+            mask = lookup->bishop_mask[sq];
+            magic = lookup->bishop_magic[sq];
+            shift_amt = 64 - 9;
+
+            ind = ((pieces & mask) * magic) >> shift_amt;
+            moves = lookup->bishop_move[512 * sq + ind];
+            moves &= ~friendlies;
+            break;
+
+        case queen:
+            moves = get_moves(board, lookup, sq, rook) |
+                    get_moves(board, lookup, sq, bishop);
+            break;
+
+        case knight:
+            moves = lookup->knight_move[sq];
+            friendlies = board->white_to_move ? board->white_pieces
+                                              : board->black_pieces;
+            moves &= ~friendlies;
+            break;
+
+        case king:
+            moves = lookup->king_move[sq];
+            friendlies = board->white_to_move ? board->white_pieces
+                                              : board->black_pieces;
+            moves &= ~friendlies;
+            break;
+
+        default:
+            fprintf(stderr, "Error: Invalid piece [%s(%s):%d]\n", __FILE__,
+                    __func__, __LINE__);
+            exit(1);
+    }
+
     return moves;
 }
 
-int extract_magic_moves_sq(ChessBoard *board, U64 *moves, int move_p,
-                           U64 magic_moves, int sq, Piece p) {
+int extract_moves(ChessBoard *board, U64 *moves, int move_p, U64 move_bb,
+                  int sq, Piece p, int quiet) {
     int ind, to, piece, captured;
     int num_moves = 0;
 
     piece = get_piece(p, board->white_to_move);
 
-    while ((ind = rightmost_set(magic_moves)) != -1) {
-        // this means the move is ind + 8 -> ind
+    while ((ind = rightmost_set(move_bb)) != -1) {
         to = ind;
-        captured = ChessBoard_piece_at(board, ind);
+        captured = quiet ? EMPTY_SQ : ChessBoard_piece_at(board, ind);
         moves[move_p + num_moves] =
             sq | to << 6 | piece << 12 | captured << 16 | NORMAL << 20;
         num_moves++;
-        BB_CLEAR(magic_moves, ind);
+        BB_CLEAR(move_bb, ind);
     }
 
     return num_moves;
 }
 
-int extract_magic_moves(ChessBoard *board, LookupTable *lookup, U64 *moves,
-                        int move_p, Piece p) {
+// For debugging only
+int extract_all_moves(ChessBoard *board, LookupTable *table, U64 *moves,
+                      int move_p, Piece p) {
     int sq, num_moves;
-    U64 magic_moves, bb;
+    U64 bb, move_bb, enemies;
 
     num_moves = 0;
     bb = get_bb(board, p, board->white_to_move);
+    enemies = board->white_to_move ? board->black_pieces : board->white_pieces;
 
     while ((sq = rightmost_set(bb)) != -1) {
-        magic_moves = get_magic_moves_sq(board, lookup, sq, p);
-        num_moves += extract_magic_moves_sq(board, moves, move_p + num_moves,
-                                            magic_moves, sq, p);
+        move_bb = get_moves(board, table, sq, p);
 
-        BB_CLEAR(bb, sq);
-    }
-
-    return num_moves;
-}
-
-// Queen generation
-U64 get_queen_moves_sq(ChessBoard *board, LookupTable *lookup, int sq) {
-    return get_magic_moves_sq(board, lookup, sq, rook) |
-           get_magic_moves_sq(board, lookup, sq, bishop);
-}
-
-int extract_queen_moves_sq(ChessBoard *board, U64 *moves, int move_p,
-                           U64 move_bb, int sq) {
-    int ind, to, piece, captured;
-    int num_moves = 0;
-
-    piece = get_piece(queen, board->white_to_move);
-
-    while ((ind = rightmost_set(move_bb)) != -1) {
-        to = ind;
-        captured = ChessBoard_piece_at(board, ind);
-        moves[move_p + num_moves] =
-            sq | to << 6 | piece << 12 | captured << 16 | NORMAL << 20;
-        num_moves++;
-        BB_CLEAR(move_bb, ind);
-    }
-
-    return num_moves;
-}
-
-int extract_queen_moves(ChessBoard *board, LookupTable *lookup, U64 *moves,
-                        int move_p) {
-    int sq, num_moves;
-    U64 magic_moves, bb;
-
-    num_moves = 0;
-    bb = get_bb(board, queen, board->white_to_move);
-
-    while ((sq = rightmost_set(bb)) != -1) {
-        magic_moves = get_queen_moves_sq(board, lookup, sq);
-        num_moves += extract_magic_moves_sq(board, moves, move_p + num_moves,
-                                            magic_moves, sq, queen);
-
-        BB_CLEAR(bb, sq);
-    }
-
-    return num_moves;
-}
-
-// King generation
-U64 get_king_moves_sq(ChessBoard *board, LookupTable *lookup, int sq) {
-    U64 moves, friendlies;
-
-    moves = lookup->king_move[sq];
-    friendlies =
-        board->white_to_move ? board->white_pieces : board->black_pieces;
-    moves &= ~friendlies;
-
-    return moves;
-}
-
-int extract_king_moves_sq(ChessBoard *board, U64 *moves, int move_p,
-                          U64 move_bb, int sq) {
-    int ind, to, piece, captured;
-    int num_moves = 0;
-
-    piece = get_piece(king, board->white_to_move);
-
-    while ((ind = rightmost_set(move_bb)) != -1) {
-        // this means the move is ind + 8 -> ind
-        to = ind;
-        captured = ChessBoard_piece_at(board, ind);
-        moves[move_p + num_moves] =
-            sq | to << 6 | piece << 12 | captured << 16 | NORMAL << 20;
-        num_moves++;
-        BB_CLEAR(move_bb, ind);
-    }
-
-    return num_moves;
-}
-
-int extract_king_moves(ChessBoard *board, LookupTable *lookup, U64 *moves,
-                       int move_p) {
-    int sq, num_moves;
-    U64 king_moves, bb;
-
-    num_moves = 0;
-    bb = get_bb(board, king, board->white_to_move);
-
-    while ((sq = rightmost_set(bb)) != -1) {
-        king_moves = get_king_moves_sq(board, lookup, sq);
-        num_moves += extract_king_moves_sq(board, moves, move_p + num_moves,
-                                           king_moves, sq);
-
-        BB_CLEAR(bb, sq);
-    }
-
-    return num_moves;
-}
-
-// Knight generation
-U64 get_knight_moves_sq(ChessBoard *board, LookupTable *lookup, int sq) {
-    U64 moves, friendlies;
-
-    moves = lookup->knight_move[sq];
-    friendlies =
-        board->white_to_move ? board->white_pieces : board->black_pieces;
-    moves &= ~friendlies;
-
-    return moves;
-}
-
-int extract_knight_moves_sq(ChessBoard *board, U64 *moves, int move_p,
-                            U64 move_bb, int sq) {
-    int ind, to, piece, captured;
-    int num_moves = 0;
-
-    piece = get_piece(knight, board->white_to_move);
-
-    while ((ind = rightmost_set(move_bb)) != -1) {
-        // this means the move is ind + 8 -> ind
-        to = ind;
-        captured = ChessBoard_piece_at(board, ind);
-        moves[move_p + num_moves] =
-            sq | to << 6 | piece << 12 | captured << 16 | NORMAL << 20;
-        num_moves++;
-        BB_CLEAR(move_bb, ind);
-    }
-
-    return num_moves;
-}
-
-int extract_knight_moves(ChessBoard *board, LookupTable *lookup, U64 *moves,
-                         int move_p) {
-    int sq, num_moves;
-    U64 knight_moves, bb;
-
-    num_moves = 0;
-    bb = get_bb(board, knight, board->white_to_move);
-
-    while ((sq = rightmost_set(bb)) != -1) {
-        knight_moves = get_knight_moves_sq(board, lookup, sq);
-        num_moves += extract_knight_moves_sq(board, moves, move_p + num_moves,
-                                             knight_moves, sq);
+        num_moves += extract_moves(board, moves, move_p + num_moves,
+                                   move_bb & enemies, sq, p, 0);
+        num_moves += extract_moves(board, moves, move_p + num_moves,
+                                   move_bb & ~enemies, sq, p, 1);
 
         BB_CLEAR(bb, sq);
     }
@@ -597,7 +440,7 @@ int extract_knight_moves(ChessBoard *board, LookupTable *lookup, U64 *moves,
 }
 
 // Castling
-int gen_castling(ChessBoard *board, U64 *moves, U64 attacked, int move_p) {
+int generate_castling(ChessBoard *board, U64 *moves, U64 attacked, int move_p) {
     int sq, king_to, piece, num_moves = 0;
     U64 castle_mask;
 
@@ -655,79 +498,149 @@ int gen_castling(ChessBoard *board, U64 *moves, U64 attacked, int move_p) {
         }
     }
 
-	return num_moves;
+    return num_moves;
 }
 
 // Attackers
 U64 attackers(ChessBoard *board, LookupTable *lookup) {
-	const int side = board->white_to_move ? BLACK : WHITE;
-	U64 attack = 0;
+    const int side = board->white_to_move ? BLACK : WHITE;
+    U64 attack = 0;
 
-	// Pawns
-	U64 moved_pawns;
-	const U64 pawns = get_bb(board, pawn, side);
+    // Pawns
+    U64 moved_pawns;
+    const U64 pawns = get_bb(board, pawn, side);
 
-	// left
-	moved_pawns = pawns & ~FILE_1;
-	moved_pawns = side ? moved_pawns << 9 : moved_pawns >> 7;
-	attack |= moved_pawns;
+    // left
+    moved_pawns = pawns & ~FILE_1;
+    moved_pawns = side ? moved_pawns << 9 : moved_pawns >> 7;
+    attack |= moved_pawns;
 
-	// right
-	moved_pawns = pawns & ~FILE_8;
-	moved_pawns = side ? moved_pawns << 7 : moved_pawns >> 9;
-	attack |= moved_pawns;
+    // right
+    moved_pawns = pawns & ~FILE_8;
+    moved_pawns = side ? moved_pawns << 7 : moved_pawns >> 9;
+    attack |= moved_pawns;
 
-	// EP
-	if (board->ep != -1) {
-		int sq;
-		
-		// left
-		sq = side ? board->ep - 9 : board->ep + 7;
-		moved_pawns = pawns & BB_SQUARE(sq);
-		moved_pawns = side ? moved_pawns << 9 : moved_pawns >> 7;
-		attack |= moved_pawns;
+    // EP
+    if (board->ep != -1) {
+        int sq;
 
-		// right
-		sq = side ? board->ep - 7 : board->ep + 9;
-		moved_pawns = pawns & BB_SQUARE(sq);
-		moved_pawns = side ? moved_pawns << 7 : moved_pawns >> 9;
-		attack |= moved_pawns;
-	}
+        // left
+        sq = side ? board->ep - 9 : board->ep + 7;
+        moved_pawns = pawns & BB_SQUARE(sq);
+        moved_pawns = side ? moved_pawns << 9 : moved_pawns >> 7;
+        attack |= moved_pawns;
 
-	// Other pieces
-	Piece pieces[] = {rook, bishop, queen, knight, king};
-	int len = sizeof(pieces) / sizeof(pieces[0]);
+        // right
+        sq = side ? board->ep - 7 : board->ep + 9;
+        moved_pawns = pawns & BB_SQUARE(sq);
+        moved_pawns = side ? moved_pawns << 7 : moved_pawns >> 9;
+        attack |= moved_pawns;
+    }
 
-	for (int i = 0; i < len; i++) {
-		Piece p = pieces[i];
-		U64 bb = get_bb(board, p, side);
-		int ind;
+    // Other pieces
+    Piece pieces[] = {rook, bishop, queen, knight, king};
+    int len = sizeof(pieces) / sizeof(pieces[0]);
 
-		while ((ind = rightmost_set(bb)) != -1) {
-			switch (p) {
-				case rook:
-					attack |= get_magic_moves_sq(board, lookup, ind, rook);
-					break;
-				case bishop:
-					attack |= get_magic_moves_sq(board, lookup, ind, bishop);
-					break;
-				case queen:
-					attack |= get_magic_moves_sq(board, lookup, ind, queen);
-					break;
-				case knight:
-					attack |= get_knight_moves_sq(board, lookup, ind);
-					break;
-				case king:
-					attack |= get_king_moves_sq(board, lookup, ind);
-					break;
-				default:
-					fprintf(stderr, "Error: Invalid piece [%s(%s):%d]\n",
-							__FILE__, __func__, __LINE__);
-					exit(1);
-			}
-			BB_CLEAR(bb, ind);
-		}
-	}
+    for (int i = 0; i < len; i++) {
+        Piece p = pieces[i];
+        U64 bb = get_bb(board, p, side);
+        int ind;
 
-	return attack;
+        while ((ind = rightmost_set(bb)) != -1) {
+            attack |= get_moves(board, lookup, ind, p);
+            BB_CLEAR(bb, ind);
+        }
+    }
+
+    return attack;
+}
+
+// Move generation
+int generate_promotions(ChessBoard *board, U64 *moves) {
+    U64 pawn_moves;
+    int num_moves = 0;
+
+    PawnMoveType promotion_types[] = {PAWN_PROMOTION, PROMOTION_CAPTURE_LEFT,
+                                      PROMOTION_CAPTURE_RIGHT};
+    int len = sizeof(promotion_types) / sizeof(promotion_types[0]);
+
+    for (int i = 0; i < len; i++) {
+        pawn_moves = get_pawn_moves(board, promotion_types[i]);
+        num_moves += extract_pawn_moves(board, moves, num_moves, pawn_moves,
+                                        promotion_types[i]);
+    }
+
+    return num_moves;
+}
+
+int generate_normal_moves_pawn(ChessBoard *board, U64 *moves, int quiet) {
+    U64 pawn_moves;
+    int num_moves = 0;
+
+    PawnMoveType capture_types[] = {CAPTURE_LEFT, CAPTURE_RIGHT,
+                                    EN_PASSANT_LEFT, EN_PASSANT_RIGHT};
+    PawnMoveType quiet_types[] = {SINGLE_PUSH, DOUBLE_PUSH};
+
+    PawnMoveType *types = quiet ? quiet_types : capture_types;
+    int len = quiet ? 2 : 4;
+
+    for (int i = 0; i < len; i++) {
+        pawn_moves = get_pawn_moves(board, types[i]);
+        num_moves +=
+            extract_pawn_moves(board, moves, num_moves, pawn_moves, types[i]);
+    }
+
+    return num_moves;
+}
+
+int generate_normal_moves(ChessBoard *board, LookupTable *table, U64 *moves,
+                          int quiet) {
+    int num_moves = 0;
+
+    // Pawns
+    num_moves += generate_normal_moves_pawn(board, moves, quiet);
+
+    // Others
+    U64 enemies =
+        board->white_to_move ? board->black_pieces : board->white_pieces;
+    Piece pieces[] = {rook, bishop, queen, knight, king};
+    int len = sizeof(pieces) / sizeof(pieces[0]);
+
+    // iterate through piece types
+    for (int i = 0; i < len; i++) {
+        Piece p = pieces[i];
+        U64 piece_bb = get_bb(board, p, board->white_to_move);
+
+        // iterate through piece locations)
+        while (piece_bb) {
+            int sq = rightmost_set(piece_bb);
+            U64 move_bb = get_moves(board, table, sq, p);
+            move_bb &= (quiet ? ~enemies : enemies);  // **masking**
+
+            num_moves +=
+                extract_moves(board, moves, num_moves, move_bb, sq, p, 0);
+
+            BB_CLEAR(piece_bb, sq);
+        }
+    }
+
+    return num_moves;
+}
+
+int generate_moves(ChessBoard *board, LookupTable *table, U64 *moves,
+                   U64 attackers, MoveGenStage stage) {
+    switch (stage) {
+        case promotions:
+            return generate_promotions(board, moves);
+
+        case captures:
+        case losing:
+            return generate_normal_moves(board, table, moves, 0);
+
+        case castling:
+            return generate_castling(board, moves, attackers, 0);
+
+        case quiets:
+            return generate_normal_moves(board, table, moves, 1);
+    }
 }

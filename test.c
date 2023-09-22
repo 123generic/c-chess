@@ -574,7 +574,7 @@ void test_extract_magic_moves_rook(void) {
         &board,
         "3B4/2R1p1Q1/1PRp1P1P/2pkb3/pp1r2P1/3p1N1P/r1nnP3/6K1 w - - 0 1");
 
-    move_p += extract_magic_moves(&board, &lookup, moves, move_p, rook);
+    move_p += extract_all_moves(&board, &lookup, moves, move_p, rook);
 
     char *expected_uci_1[] = {"c6c5", "c6d6", "c7a7", "c7b7",
                               "c7d7", "c7e7", "c7c8"};
@@ -596,7 +596,7 @@ void test_extract_magic_moves_rook(void) {
     ChessBoard_from_FEN(
         &board, "3k4/pq4bp/1pppK3/2P2P2/p6R/PRpB1b2/PP2Q1P1/3nn3 w - - 0 1");
 
-    move_p += extract_magic_moves(&board, &lookup, moves, move_p, rook);
+    move_p += extract_all_moves(&board, &lookup, moves, move_p, rook);
 
     char expected_uci_2[][5] = {"b3b4", "b3b5", "b3b6", "b3c3", "h4h1", "h4h2",
                                 "h4h3", "h4h5", "h4h6", "h4h7", "h4a4", "h4b4",
@@ -632,7 +632,7 @@ void test_extract_magic_moves_rook(void) {
     ChessBoard_from_FEN(
         &board, "N2K4/2p2pNP/2Q2pq1/6RP/3P2p1/1PPkb1p1/1pbB1p1P/r7 w - - 0 1");
 
-    move_p += extract_magic_moves(&board, &lookup, moves, move_p, rook);
+    move_p += extract_all_moves(&board, &lookup, moves, move_p, rook);
 
     char expected_uci_3[][5] = {"g5a5", "g5b5", "g5c5", "g5d5",
                                 "g5e5", "g5f5", "g5g4", "g5g6"};
@@ -677,7 +677,7 @@ void test_extract_magic_moves_bishop(void) {
     ChessBoard_from_FEN(
         &board, "6N1/5RKP/BbPP4/6P1/pR1n2qn/p1B1p3/Q1Pp3r/N1r4k w - - 0 1");
 
-    move_p += extract_magic_moves(&board, &lookup, moves, move_p, bishop);
+    move_p += extract_all_moves(&board, &lookup, moves, move_p, bishop);
 
     char expected_uci_1[][5] = {"a6b7", "a6c8", "a6b5", "a6c4", "a6d3",
                                 "a6e2", "a6f1", "c3d4", "c3d2", "c3b2"};
@@ -711,7 +711,7 @@ void test_extract_magic_moves_bishop(void) {
     ChessBoard_from_FEN(
         &board, "7b/P3QKpk/1rPq2n1/1b6/pB3p1p/p4p1N/PP1p1rP1/3B4 b - - 0 1");
 
-    move_p += extract_magic_moves(&board, &lookup, moves, move_p, bishop);
+    move_p += extract_all_moves(&board, &lookup, moves, move_p, bishop);
 
     char expected_uci_2[][5] = {"b5a6", "b5c6", "b5c4", "b5d3", "b5e2", "b5f1"};
     char actual_uci_2[sizeof(expected_uci_2) / sizeof(expected_uci_2[0])][5];
@@ -755,7 +755,7 @@ void test_extract_queen_moves(void) {
     ChessBoard_from_FEN(
         &board, "k5r1/Pp6/P1p1RRpb/4rpQq/2PB1pp1/1n2P1n1/1K1N3p/8 w - - 0 1");
 
-    move_p += extract_queen_moves(&board, &lookup, moves, move_p);
+    move_p += extract_all_moves(&board, &lookup, moves, move_p, queen);
 
     char expected_uci_1[][5] = {"g5g6", "g5g4", "g5f4", "g5f5",
                                 "g5h4", "g5h5", "g5h6"};
@@ -789,7 +789,7 @@ void test_extract_queen_moves(void) {
     ChessBoard_from_FEN(
         &board, "1N4RB/1p2KNp1/Rp3p2/1kp1bq1P/2nP1rP1/2P2Q1r/p7/4n3 b - - 0 1");
 
-    move_p += extract_queen_moves(&board, &lookup, moves, move_p);
+    move_p += extract_all_moves(&board, &lookup, moves, move_p, queen);
 
     char expected_uci_2[][5] = {"f5b1", "f5c2", "f5d3", "f5e4", "f5g6", "f5h7",
                                 "f5c8", "f5d7", "f5e6", "f5g4", "f5g5", "f5h5"};
@@ -834,7 +834,7 @@ void test_extract_king_moves(void) {
     ChessBoard_from_FEN(
         &board, "8/bR4K1/P1p1bp1p/1nk1N3/5BP1/1PP1p1nQ/1P2BPP1/R2q4 w - - 0 1");
 
-    move_p += extract_king_moves(&board, &lookup, moves, move_p);
+    move_p += extract_all_moves(&board, &lookup, moves, move_p, king);
 
     char expected_uci_1[][5] = {"g7f6", "g7g6", "g7h6", "g7h7",
                                 "g7h8", "g7g8", "g7f8", "g7f7"};
@@ -869,7 +869,7 @@ void test_extract_king_moves(void) {
         &board,
         "2B1nk1b/1pPR4/1P6/1r1p4/2p1pP1r/2QnNp2/1PR1b1P1/K3N3 b - - 0 1");
 
-    move_p += extract_king_moves(&board, &lookup, moves, move_p);
+    move_p += extract_all_moves(&board, &lookup, moves, move_p, king);
 
     char expected_uci_2[][5] = {"f8e7", "f8f7", "f8g7", "f8g8"};
     char actual_uci_2[sizeof(expected_uci_2) / sizeof(expected_uci_2[0])][5];
@@ -913,7 +913,7 @@ void test_extract_knight_moves(void) {
     ChessBoard_from_FEN(
         &board, "n7/1Pnp1p1b/2QNrbP1/1r3p1P/2PP2P1/kp5p/N2p3q/3K4 w - - 0 1");
 
-    move_p += extract_knight_moves(&board, &lookup, moves, move_p);
+    move_p += extract_all_moves(&board, &lookup, moves, move_p, knight);
 
     char expected_uci_1[][5] = {"a2b4", "a2c3", "a2c1", "d6c8", "d6e8",
                                 "d6f7", "d6f5", "d6e4", "d6b5"};
@@ -947,7 +947,7 @@ void test_extract_knight_moves(void) {
     ChessBoard_from_FEN(
         &board, "6N1/3p2Pp/3RBrk1/P1PPbq2/5pp1/2BPp3/1n2Pp2/QR3K2 b - - 0 1");
 
-    move_p += extract_knight_moves(&board, &lookup, moves, move_p);
+    move_p += extract_all_moves(&board, &lookup, moves, move_p, knight);
 
     char expected_uci_2[][5] = {"b2a4", "b2c4", "b2d3", "b2d1"};
     char actual_uci_2[sizeof(expected_uci_2) / sizeof(expected_uci_2[0])][5];
@@ -1443,7 +1443,7 @@ int run_single_test(LookupTable *lookup, char *fen, char expected_uci[][6],
 
     char actual_uci[256][6];
 
-    move_p += gen_castling(&board, moves, attacked, move_p);
+    move_p += generate_castling(&board, moves, attacked, move_p);
 
     if (len != move_p) {
         return 0;
