@@ -1582,6 +1582,58 @@ void fuzz_generate_moves(void) {
     }
 }
 
+// void fuzz_legal_moves(void) {
+//     LookupTable lookup = {0};
+//     init_LookupTable(&lookup);
+
+//     ChessBoard board;
+//     U64 attacked;
+
+//     // open file fens.txt
+//     FILE *fptr;
+//     fptr = fopen("fens.txt", "r");
+//     if (fptr == NULL) {
+//         printf("[%s %s:%d] Error opening file\n", __func__, __FILE__, __LINE__);
+//         exit(1);
+//     }
+
+//     char fen[100];
+//     while (fgets(fen, 99, fptr) != NULL) {
+//         fen[strcspn(fen, "\n")] = '\0';
+
+//         U64 moves[256] = {0};
+//         char ascii_moves[256][6] = {0};
+//         int num_moves = 0;
+
+//         ChessBoard_from_FEN(&board, fen);
+//         attacked = attackers(&board, &lookup, !board.side);
+
+//         MoveGenStage stage[] = {promotions, captures, castling, quiets};
+//         int len = sizeof(stage) / sizeof(stage[0]);
+//         for (int i = 0; i < len; i++) {
+//             num_moves +=
+//                 generate_moves(&board, &lookup, moves + num_moves, attacked, stage[i]);
+
+// 			for (int move_p = 0; move_p < num_moves; move_p++) {
+// 				// make_move
+// 			}
+//         }
+
+//         for (int i = 0; i < num_moves; i++) {
+//             move_to_uci(moves[i], ascii_moves[i]);
+//         }
+
+//         qsort(ascii_moves, num_moves, sizeof(ascii_moves[0]),
+//               (int (*)(const void *, const void *))strcmp);
+
+//         // printf("%s:", fen);
+//         for (int i = 0; i < num_moves; i++) {
+//             printf(i == 0 ? "%s" : " %s", ascii_moves[i]);
+//         }
+//         printf("\n");
+//     }
+// }
+
 // Debugging with printf
 void debug_gen_occupancy_rook(void) {
     LookupTable lookup = {0};

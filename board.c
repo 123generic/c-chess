@@ -139,17 +139,17 @@ void ChessBoard_from_FEN(ChessBoard *board, char *fen) {
     if (fen[i] == '-') {
         i += 2;  // skip the dash and the space
     } else {
-        board->KC = fen[i] == 'K';
-        if (board->KC) i++;
+        board->KC[white] = fen[i] == 'K';
+        if (board->KC[white]) i++;
 
-        board->QC = fen[i] == 'Q';
-        if (board->QC) i++;
+        board->QC[white] = fen[i] == 'Q';
+        if (board->QC[white]) i++;
 
-        board->kc = fen[i] == 'k';
-        if (board->kc) i++;
+        board->KC[black] = fen[i] == 'k';
+        if (board->KC[black]) i++;
 
-        board->qc = fen[i] == 'q';
-        if (board->qc) i++;
+        board->QC[black] = fen[i] == 'q';
+        if (board->QC[black]) i++;
 
         i++;  // space
     }
@@ -263,11 +263,11 @@ void ChessBoard_to_FEN(ChessBoard *board, char *str) {
     str[str_p++] = ' ';
 
     // Write castling rights
-    if (board->KC || board->QC || board->kc || board->qc) {
-        if (board->KC) str[str_p++] = 'K';
-        if (board->QC) str[str_p++] = 'Q';
-        if (board->kc) str[str_p++] = 'k';
-        if (board->qc) str[str_p++] = 'q';
+    if (board->KC[white] || board->QC[white] || board->KC[black] || board->QC[black]) {
+        if (board->KC[white]) str[str_p++] = 'K';
+        if (board->QC[white]) str[str_p++] = 'Q';
+        if (board->KC[black]) str[str_p++] = 'k';
+        if (board->QC[black]) str[str_p++] = 'q';
     } else {
         str[str_p++] = '-';
     }

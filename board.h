@@ -28,7 +28,7 @@ typedef struct {
     Side side;
 
     // Castling
-    int KC, QC, kc, qc;
+    int KC[2], QC[2];
 
     // EP
     // -1 default; ep +- 1 are valid ep from squares

@@ -393,7 +393,7 @@ int generate_castling(ChessBoard *board, U64 *moves, U64 attacked, int move_p) {
     if (board->side == white) {
         sq = rightmost_set(board->bitboards[white + king]);
 
-        if (board->KC) {
+        if (board->KC[white]) {
             king_to = sq - 2;
             castle_mask = BB_SQUARE(sq - 1) | BB_SQUARE(sq - 2);
             check_mask = BB_SQUARE(sq) | BB_SQUARE(sq - 1) | BB_SQUARE(sq - 2);
@@ -406,7 +406,7 @@ int generate_castling(ChessBoard *board, U64 *moves, U64 attacked, int move_p) {
             }
         }
 
-        if (board->QC) {
+        if (board->QC[white]) {
             king_to = sq + 2;
             castle_mask =
                 BB_SQUARE(sq + 1) | BB_SQUARE(sq + 2) | BB_SQUARE(sq + 3);
@@ -422,7 +422,7 @@ int generate_castling(ChessBoard *board, U64 *moves, U64 attacked, int move_p) {
     } else {
         sq = rightmost_set(board->bitboards[black + king]);
 
-        if (board->kc) {
+        if (board->KC[black]) {
             king_to = sq - 2;
             castle_mask = BB_SQUARE(sq - 1) | BB_SQUARE(sq - 2);
             check_mask = BB_SQUARE(sq) | BB_SQUARE(sq - 1) | BB_SQUARE(sq - 2);
@@ -435,7 +435,7 @@ int generate_castling(ChessBoard *board, U64 *moves, U64 attacked, int move_p) {
             }
         }
 
-        if (board->qc) {
+        if (board->QC[black]) {
             king_to = sq + 2;
             castle_mask =
                 BB_SQUARE(sq + 1) | BB_SQUARE(sq + 2) | BB_SQUARE(sq + 3);
