@@ -20,27 +20,12 @@ U64 make_bitboard(char *str);
 // Bitboard
 typedef struct {
     // BitBoards
-    U64 white_pawns;
-    U64 white_rooks;
-    U64 white_knights;
-    U64 white_bishops;
-    U64 white_queens;
-    U64 white_king;
-
-    U64 black_pawns;
-    U64 black_rooks;
-    U64 black_knights;
-    U64 black_bishops;
-    U64 black_queens;
-    U64 black_king;
-
-	// Extra boards
-    U64 white_pieces;
-    U64 black_pieces;
-    U64 all_pieces;
+	// indexed as bitboards[piece + side]
+	// extra bitboards indexed as 12 + white -> white_pieces, 12 + black -> black_pieces, 12 + all -> all_pieces
+	U64 bitboards[15];
 
     // Board State
-    int white_to_move;
+    Side side;
 
     // Castling
     int KC, QC, kc, qc;
@@ -60,6 +45,6 @@ void init_ChessBoard(ChessBoard *board);
 void ChessBoard_from_FEN(ChessBoard *board, char *fen);
 void ChessBoard_str(ChessBoard *board, char *str);
 void ChessBoard_to_FEN(ChessBoard *board, char *str);
-int ChessBoard_piece_at(ChessBoard *board, int ind);
+Piece ChessBoard_piece_at(ChessBoard *board, int ind);
 
 #endif  // CHESS_H

@@ -25,33 +25,23 @@ typedef uint64_t U64;
 #define FILE_7 0x202020202020202
 #define FILE_8 0x101010101010101
 
-#define EMPTY_SQ 0
-#define WHITE_PAWN 1
-#define WHITE_ROOK 2
-#define WHITE_KNIGHT 3
-#define WHITE_BISHOP 4
-#define WHITE_QUEEN 5
-#define WHITE_KING 6
-#define BLACK_PAWN 7
-#define BLACK_ROOK 8
-#define BLACK_KNIGHT 9
-#define BLACK_BISHOP 10
-#define BLACK_QUEEN 11
-#define BLACK_KING 12
-
-// board.white_to_move = 1 means we can do side = board.white_to_move in fn
-// calls
-#define WHITE 1
-#define BLACK 0
-
-// Piece enum
 typedef enum {
-    pawn,
-    rook,
-    knight,
-    bishop,
-    queen,
-    king,
+	white = 0,
+	black = 1,
+	all = 2,  // used for bitboard indexing
+} Side;
+
+// Piece enum (must fit in nibble)
+typedef enum {
+	empty = 15,
+    pawn = 0,
+    rook = 2,
+    knight = 4,
+    bishop = 6,
+    queen = 8,
+    king = 10,
 } Piece;
+
+extern const int all_pieces;  // used for bitboard indexing (12, defined in board.c)
 
 #endif  // COMMON_H

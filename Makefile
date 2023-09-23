@@ -29,4 +29,4 @@ test: $(TEST_SRC)
 # 	./$(TEST_EXEC)
 
 clean:
-	rm -rf $(CHESS_EXEC) $(TEST_EXEC) $(TEST_EXEC).dSYM __pycache__
+	rm -rf $(CHESS_EXEC) $(TEST_EXEC) $(TEST_EXEC).dSYM __pycache__ fens.txt moves.txt resultant.txt

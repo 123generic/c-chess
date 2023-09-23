@@ -7,6 +7,8 @@
 #include "lookup.h"
 #include "movegen.h"
 
+const int all_pieces = 12;
+
 // Bitboard helpers
 int rightmost_set(U64 bb) {
     if (bb == 0) return -1;
@@ -55,7 +57,8 @@ U64 make_bitboard(char *str) {
 
 // ChessBoard
 void init_ChessBoard(ChessBoard *board) {
-    ChessBoard_from_FEN(board, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    ChessBoard_from_FEN(
+        board, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 }
 
 // This function will break if FEN is invalid lol
@@ -63,46 +66,45 @@ void ChessBoard_from_FEN(ChessBoard *board, char *fen) {
     // Set all 0
     memset(board, 0, sizeof(ChessBoard));
 
-// Set bitboards
-#define SET(bb, ind) board->bb |= 1ULL << ind
+    // Set bitboards
     int i = 0, ind = 63;
     for (/* using i, ind */; fen[i] != ' '; i++, ind--) {
         switch (fen[i]) {
             case 'p':
-                SET(black_pawns, ind);
+                board->bitboards[black + pawn] |= 1ULL << ind;
                 break;
             case 'r':
-                SET(black_rooks, ind);
+                board->bitboards[black + rook] |= 1ULL << ind;
                 break;
             case 'n':
-                SET(black_knights, ind);
+                board->bitboards[black + knight] |= 1ULL << ind;
                 break;
             case 'b':
-                SET(black_bishops, ind);
+                board->bitboards[black + bishop] |= 1ULL << ind;
                 break;
             case 'q':
-                SET(black_queens, ind);
+                board->bitboards[black + queen] |= 1ULL << ind;
                 break;
             case 'k':
-                SET(black_king, ind);
+                board->bitboards[black + king] |= 1ULL << ind;
                 break;
             case 'P':
-                SET(white_pawns, ind);
+                board->bitboards[white + pawn] |= 1ULL << ind;
                 break;
             case 'R':
-                SET(white_rooks, ind);
+                board->bitboards[white + rook] |= 1ULL << ind;
                 break;
             case 'N':
-                SET(white_knights, ind);
+                board->bitboards[white + knight] |= 1ULL << ind;
                 break;
             case 'B':
-                SET(white_bishops, ind);
+                board->bitboards[white + bishop] |= 1ULL << ind;
                 break;
             case 'Q':
-                SET(white_queens, ind);
+                board->bitboards[white + queen] |= 1ULL << ind;
                 break;
             case 'K':
-                SET(white_king, ind);
+                board->bitboards[white + king] |= 1ULL << ind;
                 break;
             case '/':
                 ind++;
@@ -114,18 +116,22 @@ void ChessBoard_from_FEN(ChessBoard *board, char *fen) {
         }
     }
     i++;  // skip the space
-#undef SET
 
-    board->white_pieces = board->white_pawns | board->white_rooks |
-                          board->white_knights | board->white_bishops |
-                          board->white_queens | board->white_king;
-    board->black_pieces = board->black_pawns | board->black_rooks |
-                          board->black_knights | board->black_bishops |
-                          board->black_queens | board->black_king;
-    board->all_pieces = board->white_pieces | board->black_pieces;
+    board->bitboards[all_pieces + white] =
+        board->bitboards[white + pawn] | board->bitboards[white + rook] |
+        board->bitboards[white + knight] | board->bitboards[white + bishop] |
+        board->bitboards[white + queen] | board->bitboards[white + king];
+
+    board->bitboards[all_pieces + black] =
+        board->bitboards[black + pawn] | board->bitboards[black + rook] |
+        board->bitboards[black + knight] | board->bitboards[black + bishop] |
+        board->bitboards[black + queen] | board->bitboards[black + king];
+
+    board->bitboards[all_pieces + all] = board->bitboards[all_pieces + white] |
+                                         board->bitboards[all_pieces + black];
 
     // Set side to move
-    board->white_to_move = fen[i] == 'w';
+    board->side = fen[i] == 'w' ? white : black;
     i += 2;  // space and skip
 
     // Set castling rights
@@ -203,18 +209,13 @@ void ChessBoard_str(ChessBoard *board, char *str) {
     str[64] = '\0';
 
     // set pieces
-    _ChessBoard_str_helper(str, board->white_pawns, 'P');
-    _ChessBoard_str_helper(str, board->white_rooks, 'R');
-    _ChessBoard_str_helper(str, board->white_knights, 'N');
-    _ChessBoard_str_helper(str, board->white_bishops, 'B');
-    _ChessBoard_str_helper(str, board->white_queens, 'Q');
-    _ChessBoard_str_helper(str, board->white_king, 'K');
-    _ChessBoard_str_helper(str, board->black_pawns, 'p');
-    _ChessBoard_str_helper(str, board->black_rooks, 'r');
-    _ChessBoard_str_helper(str, board->black_knights, 'n');
-    _ChessBoard_str_helper(str, board->black_bishops, 'b');
-    _ChessBoard_str_helper(str, board->black_queens, 'q');
-    _ChessBoard_str_helper(str, board->black_king, 'k');
+    char pieces[] = "PpRrNnBbQqKk";
+    for (Side side = white; side <= black; side++) {
+        for (Piece piece = pawn; piece <= king; piece += 2) {
+            _ChessBoard_str_helper(str, board->bitboards[side + piece],
+                                   pieces[side + piece]);
+        }
+    }
 }
 
 // str should have 128 chars allocated for roundness
@@ -257,7 +258,7 @@ void ChessBoard_to_FEN(ChessBoard *board, char *str) {
     str[str_p++] = ' ';
 
     // Write side to move
-    str[str_p++] = board->white_to_move ? 'w' : 'b';
+    str[str_p++] = board->side == white ? 'w' : 'b';
 
     str[str_p++] = ' ';
 
@@ -294,34 +295,26 @@ void ChessBoard_to_FEN(ChessBoard *board, char *str) {
     str[str_p] = '\0';
 }
 
-int ChessBoard_piece_at(ChessBoard *board, int ind) {
+Piece ChessBoard_piece_at(ChessBoard *board, int ind) {
     U64 loc = 1ULL << ind;
-    if ((board->all_pieces & loc) == 0) {
-        return EMPTY_SQ;
+    if ((board->bitboards[all_pieces + all] & loc) == 0) {
+        return empty;
     }
-    if (board->white_pieces & loc) {
-        if (board->white_pawns & loc)
-            return WHITE_PAWN;
-        else if (board->white_rooks & loc)
-            return WHITE_ROOK;
-        else if (board->white_knights & loc)
-            return WHITE_KNIGHT;
-        else if (board->white_bishops & loc)
-            return WHITE_BISHOP;
-        else if (board->white_queens & loc)
-            return WHITE_QUEEN;
-        return WHITE_KING;
+    if (board->bitboards[all_pieces + white] & loc) {
+        for (Piece piece = pawn; piece <= king; piece++) {
+            if (board->bitboards[white + piece] & loc) {
+                return piece;
+            }
+        }
     } else {
-        if (board->black_pawns & loc)
-            return BLACK_PAWN;
-        else if (board->black_rooks & loc)
-            return BLACK_ROOK;
-        else if (board->black_knights & loc)
-            return BLACK_KNIGHT;
-        else if (board->black_bishops & loc)
-            return BLACK_BISHOP;
-        else if (board->black_queens & loc)
-            return BLACK_QUEEN;
-        return BLACK_KING;
+        for (Piece piece = pawn; piece <= king; piece++) {
+            if (board->bitboards[black + piece] & loc) {
+                return piece;
+            }
+        }
     }
+
+    fprintf(stderr, "Error: piece_at called on empty square [%s(%s):%d]\n",
+            __FILE__, __func__, __LINE__);
+    exit(1);
 }

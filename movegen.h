@@ -12,7 +12,7 @@
 // 12-15: piece
 // 16-19: capture piece
 // 20-23: move type
-// 24-26: promote type
+// 24-27: promote type
 
 typedef enum {
     SINGLE_PUSH,
@@ -63,7 +63,7 @@ int generate_castling(ChessBoard *board, U64 *moves, U64 attacked, int move_p);
 
 // Attackers
 U64 get_attacks(ChessBoard *board, LookupTable *lookup, int sq, Piece p);
-U64 attackers(ChessBoard *board, LookupTable *lookup, int side);
+U64 attackers(ChessBoard *board, LookupTable *lookup, Side side);
 int is_legal(ChessBoard *board, U64 attacked);
 
 // Move Generation
@@ -77,7 +77,5 @@ int generate_moves(ChessBoard *board, LookupTable *table, U64 *moves,
 // Utilities
 U64 move_from_uci(ChessBoard *board, char *uci);
 void move_to_uci(U64 move, char *uci);
-int get_piece(Piece p, int wtm);
-U64 get_bb(ChessBoard *board, Piece p, int wtm);
 
 #endif  // MOVEGEN_H

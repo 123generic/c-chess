@@ -1437,8 +1437,7 @@ int run_single_test(LookupTable *lookup, char *fen, char expected_uci[][6],
     ChessBoard board;
     ChessBoard_from_FEN(&board, fen);
 
-	int side = board.white_to_move ? BLACK : WHITE;
-    U64 attacked = attackers(&board, lookup, side);
+    U64 attacked = attackers(&board, lookup, !board.side);
 
     U64 moves[256] = {0};
     int move_p = 0;
@@ -1514,22 +1513,22 @@ void test_is_legal(void) {
     // Test 1
     char fen1[] = "2B2k2/pqPPp2p/p1pPr2N/p1P5/1Rb1P2r/1NpP1nbP/p2nQKP1/2R1B3 w - - 0 1";
     ChessBoard_from_FEN(&board, fen1);
-    assert(!is_legal(&board, attackers(&board, &lookup, !board.white_to_move)));
+    assert(!is_legal(&board, attackers(&board, &lookup, !board.side)));
 
     // Test 2
     char fen2[] = "2B2k2/pqPPp2p/p1pPr2N/p1P5/1Rb1P2r/1NpP1n1P/p2nQKPb/2R1B3 w - - 0 1";
     ChessBoard_from_FEN(&board, fen2);
-    assert(is_legal(&board, attackers(&board, &lookup, !board.white_to_move)));
+    assert(is_legal(&board, attackers(&board, &lookup, !board.side)));
 
 	// Test 3
 	char fen3[] = "K4BR1/p1pr4/1Pr1pk1p/PnP2P1p/4N1Pp/PRqp3b/PNBbPp1n/5Q2 b - - 0 1";
 	ChessBoard_from_FEN(&board, fen3);
-	assert(!is_legal(&board, attackers(&board, &lookup, !board.white_to_move)));
+	assert(!is_legal(&board, attackers(&board, &lookup, !board.side)));
 
 	// Test 4
 	char fen4[] = "K4BR1/p1pr4/1Pr1pk1p/PnP2P1p/5NPp/PRqp3b/PNBbPp1n/5Q2 b - - 0 1";
 	ChessBoard_from_FEN(&board, fen4);
-	assert(is_legal(&board, attackers(&board, &lookup, !board.white_to_move)));
+	assert(is_legal(&board, attackers(&board, &lookup, !board.side)));
 
     printf("%s: All tests passed.\n", __func__);
 }
@@ -1559,8 +1558,7 @@ void fuzz_generate_moves(void) {
         int num_moves = 0;
 
         ChessBoard_from_FEN(&board, fen);
-		int side = board.white_to_move ? BLACK : WHITE;
-        attacked = attackers(&board, &lookup, side);
+        attacked = attackers(&board, &lookup, !board.side);
 
         MoveGenStage stage[] = {promotions, captures, castling, quiets};
         int len = sizeof(stage) / sizeof(stage[0]);
