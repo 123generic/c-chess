@@ -386,6 +386,7 @@ int extract_all_moves(ChessBoard *board, LookupTable *table, U64 *moves,
 }
 
 // Castling
+// attacked is squares attacked by !board->side (enemies)
 int generate_castling(ChessBoard *board, U64 *moves, U64 attacked, int move_p) {
     int sq, king_to, num_moves = 0;
     U64 castle_mask, check_mask;
@@ -585,6 +586,7 @@ int generate_normal_moves(ChessBoard *board, LookupTable *table, U64 *moves,
     return num_moves;
 }
 
+// attackers is squares attacked by !board->side (enemies)
 int generate_moves(ChessBoard *board, LookupTable *table, U64 *moves,
                    U64 attackers, MoveGenStage stage) {
     switch (stage) {
