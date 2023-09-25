@@ -464,12 +464,12 @@ U64 attackers(ChessBoard *board, LookupTable *lookup, Side side) {
 
     // left
     moved_pawns = pawns & ~FILE_1;
-    moved_pawns = side ? moved_pawns << 9 : moved_pawns >> 7;
+    moved_pawns = side == white ? moved_pawns << 9 : moved_pawns >> 7;
     attack |= moved_pawns;
 
     // right
     moved_pawns = pawns & ~FILE_8;
-    moved_pawns = side ? moved_pawns << 7 : moved_pawns >> 9;
+    moved_pawns = side == white ? moved_pawns << 7 : moved_pawns >> 9;
     attack |= moved_pawns;
 
     // EP
@@ -477,15 +477,15 @@ U64 attackers(ChessBoard *board, LookupTable *lookup, Side side) {
         int sq;
 
         // left
-        sq = side ? board->ep - 9 : board->ep + 7;
+        sq = side == white ? board->ep - 9 : board->ep + 7;
         moved_pawns = pawns & BB_SQUARE(sq);
-        moved_pawns = side ? moved_pawns << 9 : moved_pawns >> 7;
+        moved_pawns = side == white ? moved_pawns << 9 : moved_pawns >> 7;
         attack |= moved_pawns;
 
         // right
-        sq = side ? board->ep - 7 : board->ep + 9;
+        sq = side == white ? board->ep - 7 : board->ep + 9;
         moved_pawns = pawns & BB_SQUARE(sq);
-        moved_pawns = side ? moved_pawns << 7 : moved_pawns >> 9;
+        moved_pawns = side == white ? moved_pawns << 7 : moved_pawns >> 9;
         attack |= moved_pawns;
     }
 
@@ -507,8 +507,8 @@ U64 attackers(ChessBoard *board, LookupTable *lookup, Side side) {
     return attack;
 }
 
-int is_legal(ChessBoard *board, U64 attacked) {
-    U64 king_bb = board->bitboards[board->side + king];
+int is_legal(ChessBoard *board, U64 attacked, Side side) {
+    U64 king_bb = board->bitboards[side + king];
     U64 king_attackers = attacked & king_bb;
 
     return king_attackers == 0;

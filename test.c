@@ -6,6 +6,7 @@
 #include "board.h"
 #include "common.h"
 #include "lookup.h"
+#include "makemove.h"
 #include "movegen.h"
 #include "rng.h"
 
@@ -1513,22 +1514,22 @@ void test_is_legal(void) {
     // Test 1
     char fen1[] = "2B2k2/pqPPp2p/p1pPr2N/p1P5/1Rb1P2r/1NpP1nbP/p2nQKP1/2R1B3 w - - 0 1";
     ChessBoard_from_FEN(&board, fen1);
-    assert(!is_legal(&board, attackers(&board, &lookup, !board.side)));
+    assert(!is_legal(&board, attackers(&board, &lookup, !board.side), board.side));
 
     // Test 2
     char fen2[] = "2B2k2/pqPPp2p/p1pPr2N/p1P5/1Rb1P2r/1NpP1n1P/p2nQKPb/2R1B3 w - - 0 1";
     ChessBoard_from_FEN(&board, fen2);
-    assert(is_legal(&board, attackers(&board, &lookup, !board.side)));
+    assert(is_legal(&board, attackers(&board, &lookup, !board.side), board.side));
 
 	// Test 3
 	char fen3[] = "K4BR1/p1pr4/1Pr1pk1p/PnP2P1p/4N1Pp/PRqp3b/PNBbPp1n/5Q2 b - - 0 1";
 	ChessBoard_from_FEN(&board, fen3);
-	assert(!is_legal(&board, attackers(&board, &lookup, !board.side)));
+	assert(!is_legal(&board, attackers(&board, &lookup, !board.side), board.side));
 
 	// Test 4
 	char fen4[] = "K4BR1/p1pr4/1Pr1pk1p/PnP2P1p/5NPp/PRqp3b/PNBbPp1n/5Q2 b - - 0 1";
 	ChessBoard_from_FEN(&board, fen4);
-	assert(is_legal(&board, attackers(&board, &lookup, !board.side)));
+	assert(is_legal(&board, attackers(&board, &lookup, !board.side), board.side));
 
     printf("%s: All tests passed.\n", __func__);
 }
@@ -1582,57 +1583,94 @@ void fuzz_generate_moves(void) {
     }
 }
 
-// void fuzz_legal_moves(void) {
-//     LookupTable lookup = {0};
-//     init_LookupTable(&lookup);
+void test_legal_move(void) {
+    LookupTable lookup = {0};
+    init_LookupTable(&lookup);
 
-//     ChessBoard board;
-//     U64 attacked;
+    ChessBoard board;
+    U64 attacked;
 
-//     // open file fens.txt
-//     FILE *fptr;
-//     fptr = fopen("fens.txt", "r");
-//     if (fptr == NULL) {
-//         printf("[%s %s:%d] Error opening file\n", __func__, __FILE__, __LINE__);
-//         exit(1);
-//     }
+	U64 moves[256] = {0};
+	char ascii_moves[256][6] = {0};
+	int ascii_move_p = 0;
+	int num_moves = 0;
 
-//     char fen[100];
-//     while (fgets(fen, 99, fptr) != NULL) {
-//         fen[strcspn(fen, "\n")] = '\0';
+	ChessBoard_from_FEN(&board, "1N3k1r/p6p/1b5n/1QP3p1/1P3pK1/7P/R1r1NBPR/1N3B2 w - - 4 26");
+	attacked = attackers(&board, &lookup, !board.side);
 
-//         U64 moves[256] = {0};
-//         char ascii_moves[256][6] = {0};
-//         int num_moves = 0;
+	MoveGenStage stage[] = {promotions, captures, castling, quiets};
+	int len = sizeof(stage) / sizeof(stage[0]);
+	for (int i = 0; i < len; i++) {
+		num_moves = generate_moves(&board, &lookup, moves, attacked, stage[i]);
 
-//         ChessBoard_from_FEN(&board, fen);
-//         attacked = attackers(&board, &lookup, !board.side);
+		for (int move_p = 0; move_p < num_moves; move_p++) {
+			ChessBoard new_board = make_move(board, moves[move_p]);
+			if (is_legal(&new_board, attackers(&new_board, &lookup, new_board.side), !new_board.side)) {
+				move_to_uci(moves[move_p], ascii_moves[ascii_move_p++]);
+			}
+		}
+	}
 
-//         MoveGenStage stage[] = {promotions, captures, castling, quiets};
-//         int len = sizeof(stage) / sizeof(stage[0]);
-//         for (int i = 0; i < len; i++) {
-//             num_moves +=
-//                 generate_moves(&board, &lookup, moves + num_moves, attacked, stage[i]);
+	qsort(ascii_moves, ascii_move_p, sizeof(ascii_moves[0]),
+			(int (*)(const void *, const void *))strcmp);
 
-// 			for (int move_p = 0; move_p < num_moves; move_p++) {
-// 				// make_move
-// 			}
-//         }
+	// printf("%s:", fen);
+	for (int i = 0; i < ascii_move_p; i++) {
+		printf(i == 0 ? "%s" : " %s", ascii_moves[i]);
+	}
+	printf("\n");
+}
 
-//         for (int i = 0; i < num_moves; i++) {
-//             move_to_uci(moves[i], ascii_moves[i]);
-//         }
+void fuzz_legal_moves(void) {
+    LookupTable lookup = {0};
+    init_LookupTable(&lookup);
 
-//         qsort(ascii_moves, num_moves, sizeof(ascii_moves[0]),
-//               (int (*)(const void *, const void *))strcmp);
+    ChessBoard board;
+    U64 attacked;
 
-//         // printf("%s:", fen);
-//         for (int i = 0; i < num_moves; i++) {
-//             printf(i == 0 ? "%s" : " %s", ascii_moves[i]);
-//         }
-//         printf("\n");
-//     }
-// }
+    // open file fens.txt
+    FILE *fptr;
+    fptr = fopen("fens.txt", "r");
+    if (fptr == NULL) {
+        printf("[%s %s:%d] Error opening file\n", __func__, __FILE__, __LINE__);
+        exit(1);
+    }
+
+    char fen[100];
+    while (fgets(fen, 99, fptr) != NULL) {
+        fen[strcspn(fen, "\n")] = '\0';
+
+        U64 moves[256] = {0};
+        char ascii_moves[256][6] = {0};
+		int ascii_move_p = 0;
+        int num_moves = 0;
+
+        ChessBoard_from_FEN(&board, fen);
+        attacked = attackers(&board, &lookup, !board.side);
+
+        MoveGenStage stage[] = {promotions, captures, castling, quiets};
+        int len = sizeof(stage) / sizeof(stage[0]);
+        for (int i = 0; i < len; i++) {
+            num_moves = generate_moves(&board, &lookup, moves, attacked, stage[i]);
+
+			for (int move_p = 0; move_p < num_moves; move_p++) {
+				ChessBoard new_board = make_move(board, moves[move_p]);
+				if (is_legal(&new_board, attackers(&new_board, &lookup, new_board.side), !new_board.side)) {
+					move_to_uci(moves[move_p], ascii_moves[ascii_move_p++]);
+				}
+			}
+        }
+
+        qsort(ascii_moves, ascii_move_p, sizeof(ascii_moves[0]),
+              (int (*)(const void *, const void *))strcmp);
+
+        // printf("%s:", fen);
+        for (int i = 0; i < ascii_move_p; i++) {
+            printf(i == 0 ? "%s" : " %s", ascii_moves[i]);
+        }
+        printf("\n");
+    }
+}
 
 // Debugging with printf
 void debug_gen_occupancy_rook(void) {
@@ -1709,14 +1747,16 @@ void debug_print(void) {
 }
 
 void fuzz(void) {
-	fuzz_generate_moves();
+	// fuzz_generate_moves();
+	fuzz_legal_moves();
 }
 
 int main(void) {
     init_genrand64(0x8c364d19345930e2);  // drawn on random day
 
+	// test_legal_move();
     // debug_print();
-	// fuzz();
-    unit_test();
+	fuzz();
+    // unit_test();
     return 0;
 }

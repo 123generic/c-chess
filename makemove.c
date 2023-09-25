@@ -11,8 +11,6 @@ void update_castling_rights(ChessBoard *board, U64 move) {
     Piece piece = (move >> 12) & 0xf;
     Piece captured = (move >> 16) & 0xf;
 
-    // Note: zobrist.castling[side][0] = kc, [side][1] = qc
-
     // If our king moves
     if (piece == king) {
         board->KC[board->side] = 0;
@@ -34,10 +32,10 @@ void update_castling_rights(ChessBoard *board, U64 move) {
     }
 }
 
-#define ON(a, b, sq) (board->bitboards[(a) + (b)] |= (1ULL << (sq)))
-#define OFF(a, b, sq) (board->bitboards[(a) + (b)] &= ~(1ULL << (sq)))
+#define ON(a, b, sq) (board.bitboards[(a) + (b)] |= (1ULL << (sq)))
+#define OFF(a, b, sq) (board.bitboards[(a) + (b)] &= ~(1ULL << (sq)))
 
-void make_move(ChessBoard *board, U64 move) {
+ChessBoard make_move(ChessBoard board, U64 move) {
     int from, to;
     Piece piece, captured;
     MoveType move_type;
@@ -51,8 +49,8 @@ void make_move(ChessBoard *board, U64 move) {
     promotion_piece = (move >> 24) & 0xf;
 
     // Board Updates
-    ON(piece, board->side, to);
-    OFF(piece, board->side, from);
+    ON(piece, board.side, to);
+    OFF(piece, board.side, from);
 
     // Conditional stuff
     switch (move_type) {
@@ -61,33 +59,33 @@ void make_move(ChessBoard *board, U64 move) {
         case NORMAL:
             // Update board
             if (captured != empty) {
-                OFF(captured, !board->side, to);
+                OFF(captured, !board.side, to);
             }
             break;
 
         case EN_PASSANT:
-            dir = 8 * (board->side - !board->side);
-            OFF(pawn, !board->side, to + dir);
+            dir = 8 * (board.side - !board.side);
+            OFF(pawn, !board.side, to + dir);
             break;
 
         case PROMOTION:
-            OFF(piece, board->side, from);
-            ON(promotion_piece, board->side, to);
+            OFF(piece, board.side, from);
+            ON(promotion_piece, board.side, to);
             // Note: all pieces already set
 
             if (captured != empty) {
-                OFF(captured, !board->side, to);
+                OFF(captured, !board.side, to);
             }
             break;
 
         case CASTLE_KING:
-            OFF(rook, board->side, from - 3);
-            ON(rook, board->side, to + 1);
+            OFF(rook, board.side, from - 3);
+            ON(rook, board.side, to + 1);
             break;
 
         case CASTLE_QUEEN:
-            OFF(rook, board->side, from + 4);
-            ON(rook, board->side, to - 1);
+            OFF(rook, board.side, from + 4);
+            ON(rook, board.side, to - 1);
             break;
 
         case UNKNOWN:
@@ -97,39 +95,41 @@ void make_move(ChessBoard *board, U64 move) {
             break;
     }
 
-    board->bitboards[all_pieces + white] =
-        board->bitboards[pawn + white] | board->bitboards[knight + white] |
-        board->bitboards[bishop + white] | board->bitboards[rook + white] |
-        board->bitboards[queen + white] | board->bitboards[king + white];
-    board->bitboards[all_pieces + black] =
-        board->bitboards[pawn + black] | board->bitboards[knight + black] |
-        board->bitboards[bishop + black] | board->bitboards[rook + black] |
-        board->bitboards[queen + black] | board->bitboards[king + black];
-    board->bitboards[all_pieces + all] = board->bitboards[all_pieces + white] |
-                                         board->bitboards[all_pieces + black];
+    board.bitboards[all_pieces + white] =
+        board.bitboards[pawn + white] | board.bitboards[knight + white] |
+        board.bitboards[bishop + white] | board.bitboards[rook + white] |
+        board.bitboards[queen + white] | board.bitboards[king + white];
+    board.bitboards[all_pieces + black] =
+        board.bitboards[pawn + black] | board.bitboards[knight + black] |
+        board.bitboards[bishop + black] | board.bitboards[rook + black] |
+        board.bitboards[queen + black] | board.bitboards[king + black];
+    board.bitboards[all_pieces + all] = board.bitboards[all_pieces + white] |
+                                         board.bitboards[all_pieces + black];
 
     // Castling
-    update_castling_rights(board, move);
+    update_castling_rights(&board, move);
 
     // En Passant
-    board->ep = -1;
+    board.ep = -1;
     if (piece == pawn && abs(from - to) == 16) {
-        board->ep = (from + to) / 2;
+        board.ep = (from + to) / 2;
     }
 
     // Halfmove Clock
-    board->halfmove_clock++;
+    board.halfmove_clock++;
     if (piece == pawn || captured != empty) {
-        board->halfmove_clock = 0;
+        board.halfmove_clock = 0;
     }
 
     // Fullmove Number
-    if (board->side == black) {
-        board->fullmove_number++;
+    if (board.side == black) {
+        board.fullmove_number++;
     }
 
     // Side
-    board->side = !board->side;
+    board.side = !board.side;
+
+	return board;
 }
 
 #undef ON

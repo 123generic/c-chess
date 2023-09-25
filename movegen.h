@@ -64,7 +64,7 @@ int generate_castling(ChessBoard *board, U64 *moves, U64 attacked, int move_p);
 // Attackers
 U64 get_attacks(ChessBoard *board, LookupTable *lookup, int sq, Piece p);
 U64 attackers(ChessBoard *board, LookupTable *lookup, Side side);
-int is_legal(ChessBoard *board, U64 attacked);
+int is_legal(ChessBoard *board, U64 attacked, Side side);
 
 // Move Generation
 int generate_promotions(ChessBoard *board, U64 *moves);
