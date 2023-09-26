@@ -8,10 +8,8 @@ CFLAGS = -Wall -Wextra -Werror -Wshadow -Wfloat-equal \
 		 -fsanitize=address -fsanitize=undefined \
 		 -pedantic -std=c99 -g
 
-CFASTFLAGS = -Wall -Wextra -Werror -Wshadow -Wfloat-equal \
-		 -Wundef -Wformat=2 -Wswitch-default \
-		 -Wstrict-overflow=5 \
-		 -pedantic -std=c99 -O3
+CFASTFLAGS = -std=c99 -O3
+PROF_FLAGS = -g -pg
 
 # Target executable names
 CHESS_EXEC = chess
@@ -32,7 +30,7 @@ test: $(TEST_SRC)
 	./$(TEST_EXEC)
 
 perft: $(PERFT_SRC)
-	$(CC) $(CFASTFLAGS) -o $(PERFT_EXEC) $(CHESS_SRC) $(PERFT_SRC)
+	$(CC) $(CFASTFLAGS) -o $(PERFT_EXEC) $(CHESS_SRC) $(PERFT_SRC) $(PROF_FLAGS)
 	./$(PERFT_EXEC)
 
 clean:

@@ -293,7 +293,7 @@ int extract_pawn_moves(ChessBoard *board, U64 *moves, int move_p,
 }
 
 // Non-pawn move extraction
-U64 get_attacks(ChessBoard *board, LookupTable *lookup, int sq, Piece p) {
+inline U64 get_attacks(ChessBoard *board, LookupTable *lookup, int sq, Piece p) {
     U64 pieces, mask, magic, moves;
     int ind, shift_amt;
 
@@ -346,10 +346,12 @@ U64 get_moves(ChessBoard *board, LookupTable *lookup, int sq, Piece p) {
 
 int extract_moves(ChessBoard *board, U64 *moves, int move_p, U64 move_bb,
                   int sq, Piece p, int quiet) {
-    int ind, to, captured;
+    int to, captured;
     int num_moves = 0;
 
-    while ((ind = rightmost_set(move_bb)) != -1) {
+    // while ((ind = rightmost_set(move_bb)) != -1) {
+	while (move_bb) {
+		int ind = __builtin_ctzll(move_bb);
         to = ind;
         captured = quiet ? empty : ChessBoard_piece_at(board, ind);
         moves[move_p + num_moves] =
@@ -491,19 +493,64 @@ U64 attackers(ChessBoard *board, LookupTable *lookup, Side side) {
     }
 
     // Other pieces
-    Piece pieces[] = {rook, bishop, queen, knight, king};
-    int len = sizeof(pieces) / sizeof(pieces[0]);
+	U64 bb;
+	U64 pieces = board->bitboards[all_pieces + all];
 
-    for (int i = 0; i < len; i++) {
-        Piece p = pieces[i];
-		U64 bb = board->bitboards[side + p];
-        int ind;
+	// rook
+	bb = board->bitboards[side + rook];
+	while (bb) {
+		int ind = __builtin_ctzll(bb);
+		attack |= get_attacks(board, lookup, ind, rook);
 
-        while ((ind = rightmost_set(bb)) != -1) {
-            attack |= get_attacks(board, lookup, ind, p);
-            BB_CLEAR(bb, ind);
-        }
-    }
+		BB_CLEAR(bb, ind);
+	}
+
+	bb = board->bitboards[side + bishop];
+	while (bb) {
+		int ind = __builtin_ctzll(bb);
+		attack |= get_attacks(board, lookup, ind, bishop);
+
+		BB_CLEAR(bb, ind);
+	}
+
+	bb = board->bitboards[side + queen];
+	while (bb) {
+		int ind = __builtin_ctzll(bb);
+		attack |= get_attacks(board, lookup, ind, queen);
+
+		BB_CLEAR(bb, ind);
+	}
+
+	bb = board->bitboards[side + knight];
+	while (bb) {
+		int ind = __builtin_ctzll(bb);
+		attack |= get_attacks(board, lookup, ind, knight);
+
+		BB_CLEAR(bb, ind);
+	}
+
+	bb = board->bitboards[side + king];
+	while (bb) {
+		int ind = __builtin_ctzll(bb);
+		attack |= get_attacks(board, lookup, ind, king);
+
+		BB_CLEAR(bb, ind);
+	}
+
+    // Piece pieces[] = {rook, bishop, queen, knight, king};
+    // int len = sizeof(pieces) / sizeof(pieces[0]);
+
+    // for (int i = 0; i < len; i++) {
+    //     Piece p = pieces[i];
+	// 	U64 bb = board->bitboards[side + p];
+
+	// 	while (bb) {
+	// 		int ind = __builtin_ctzll(bb);
+    //         attack |= get_attacks(board, lookup, ind, p);
+
+    //         BB_CLEAR(bb, ind);
+    //     }
+    // }
 
     return attack;
 }
@@ -572,7 +619,8 @@ int generate_normal_moves(ChessBoard *board, LookupTable *table, U64 *moves,
 
         // iterate through piece locations)
         while (piece_bb) {
-            int sq = rightmost_set(piece_bb);
+            // int sq = rightmost_set(piece_bb);
+			int sq = __builtin_ctzll(piece_bb);
             U64 move_bb = get_moves(board, table, sq, p);
             move_bb &= (quiet ? ~enemies : enemies);  // **masking**
 

@@ -31,7 +31,7 @@ void print_bb(U64 bb) {
         if (i % 8 == 0 && i != 0) {
             printf("\n");
         }
-        printf("%llu", (bb >> (63 - i)) & 1);
+        printf("%lu", (bb >> (63 - i)) & 1);
     }
     printf("\n");
 }
