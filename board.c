@@ -9,22 +9,6 @@
 
 const int all_pieces = 12;
 
-// Bitboard helpers
-int rightmost_set(U64 bb) {
-    if (bb == 0) return -1;
-    // count trailing zeros unsigned long long
-    return __builtin_ctzll(bb);
-
-    // Alternative implementation ...
-    // int i = 0;
-    // while (bb != 0 && ((bb & 1) == 0)) {
-    //     bb >>= 1;
-    //     i++;
-    // }
-
-    // return i;
-}
-
 void print_bb(U64 bb) {
     int i;
     for (i = 0; i < 64; i++) {
@@ -195,8 +179,8 @@ void ChessBoard_from_FEN(ChessBoard *board, char *fen) {
 }
 
 void _ChessBoard_str_helper(char *str, U64 bb, char piece) {
-    int ind;
-    while ((ind = rightmost_set(bb)) != -1) {
+	while (bb) {
+		int ind = __builtin_ctzll(bb);
         str[63 - ind] = piece;
         BB_CLEAR(bb, ind);
     }

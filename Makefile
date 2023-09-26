@@ -29,8 +29,12 @@ test: $(TEST_SRC)
 	$(CC) $(CFLAGS) -o $(TEST_EXEC) $(TEST_SRC) $(CHESS_SRC)
 	./$(TEST_EXEC)
 
-perft: $(PERFT_SRC)
+perft_prof:
 	$(CC) $(CFASTFLAGS) -o $(PERFT_EXEC) $(CHESS_SRC) $(PERFT_SRC) $(PROF_FLAGS)
+	./$(PERFT_EXEC)
+
+perft: 
+	$(CC) $(CFASTFLAGS) -o $(PERFT_EXEC) $(CHESS_SRC) $(PERFT_SRC)
 	./$(PERFT_EXEC)
 
 clean:

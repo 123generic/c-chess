@@ -13,7 +13,6 @@
 #define BOARD_GET(side, piece) (board->side##_##piece)
 
 // Bitboard Helpers
-int rightmost_set(U64 bb);
 void print_bb(U64 bb);
 U64 make_bitboard(char *str);
 

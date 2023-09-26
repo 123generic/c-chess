@@ -171,7 +171,8 @@ int extract_pawn_moves(ChessBoard *board, U64 *moves, int move_p,
 
     switch (move_type) {
         case SINGLE_PUSH:
-            while ((ind = rightmost_set(pawn_moves)) != -1) {
+			while (pawn_moves) {
+				int ind =  __builtin_ctzll(pawn_moves);
                 to = ind;
                 from = wtm ? ind - 8 : ind + 8;
                 moves[move_p + num_moves] = from | to << 6 | pawn << 12 |
@@ -182,7 +183,8 @@ int extract_pawn_moves(ChessBoard *board, U64 *moves, int move_p,
             break;
 
         case DOUBLE_PUSH:
-            while ((ind = rightmost_set(pawn_moves)) != -1) {
+			while (pawn_moves) {
+				int ind =  __builtin_ctzll(pawn_moves);
                 to = ind;
                 from = wtm ? ind - 16 : ind + 16;
                 moves[move_p + num_moves] = from | to << 6 | pawn << 12 |
@@ -193,7 +195,8 @@ int extract_pawn_moves(ChessBoard *board, U64 *moves, int move_p,
             break;
 
         case CAPTURE_LEFT:
-            while ((ind = rightmost_set(pawn_moves)) != -1) {
+			while (pawn_moves) {
+				int ind =  __builtin_ctzll(pawn_moves);
                 to = ind;
                 from = wtm ? ind - 9 : ind + 7;
                 captured = ChessBoard_piece_at(board, to);
@@ -205,7 +208,8 @@ int extract_pawn_moves(ChessBoard *board, U64 *moves, int move_p,
             break;
 
         case CAPTURE_RIGHT:
-            while ((ind = rightmost_set(pawn_moves)) != -1) {
+			while (pawn_moves) {
+				int ind =  __builtin_ctzll(pawn_moves);
                 to = ind;
                 from = wtm ? ind - 7 : ind + 9;
                 captured = ChessBoard_piece_at(board, to);
@@ -217,7 +221,8 @@ int extract_pawn_moves(ChessBoard *board, U64 *moves, int move_p,
             break;
 
         case PAWN_PROMOTION:
-            while ((ind = rightmost_set(pawn_moves)) != -1) {
+			while (pawn_moves) {
+				int ind =  __builtin_ctzll(pawn_moves);
                 to = ind;
                 from = wtm ? ind - 8 : ind + 8;
 
@@ -233,7 +238,8 @@ int extract_pawn_moves(ChessBoard *board, U64 *moves, int move_p,
             break;
 
         case PROMOTION_CAPTURE_LEFT:
-            while ((ind = rightmost_set(pawn_moves)) != -1) {
+			while (pawn_moves) {
+				int ind =  __builtin_ctzll(pawn_moves);
                 to = ind;
                 from = wtm ? ind - 9 : ind + 7;
                 captured = ChessBoard_piece_at(board, to);
@@ -250,7 +256,8 @@ int extract_pawn_moves(ChessBoard *board, U64 *moves, int move_p,
             break;
 
         case PROMOTION_CAPTURE_RIGHT:
-            while ((ind = rightmost_set(pawn_moves)) != -1) {
+			while (pawn_moves) {
+				int ind =  __builtin_ctzll(pawn_moves);
                 to = ind;
                 from = wtm ? ind - 7 : ind + 9;
                 captured = ChessBoard_piece_at(board, to);
@@ -268,7 +275,7 @@ int extract_pawn_moves(ChessBoard *board, U64 *moves, int move_p,
 
         case EN_PASSANT_LEFT:
             if (pawn_moves == 0) break;
-            ind = rightmost_set(pawn_moves);
+			ind = __builtin_ctzll(pawn_moves);
             to = ind;
             from = wtm ? ind - 9 : ind + 7;
 
@@ -279,7 +286,7 @@ int extract_pawn_moves(ChessBoard *board, U64 *moves, int move_p,
 
         case EN_PASSANT_RIGHT:
             if (pawn_moves == 0) break;
-            ind = rightmost_set(pawn_moves);
+            ind = __builtin_ctzll(pawn_moves);
             to = ind;
             from = wtm ? ind - 7 : ind + 9;
 
@@ -349,7 +356,6 @@ int extract_moves(ChessBoard *board, U64 *moves, int move_p, U64 move_bb,
     int to, captured;
     int num_moves = 0;
 
-    // while ((ind = rightmost_set(move_bb)) != -1) {
 	while (move_bb) {
 		int ind = __builtin_ctzll(move_bb);
         to = ind;
@@ -373,7 +379,8 @@ int extract_all_moves(ChessBoard *board, LookupTable *table, U64 *moves,
 	bb = board->bitboards[board->side + p];
 	enemies = board->bitboards[all_pieces + !board->side];
 
-    while ((sq = rightmost_set(bb)) != -1) {
+	while (bb) {
+		sq = __builtin_ctzll(bb);
         move_bb = get_moves(board, table, sq, p);
 
         num_moves += extract_moves(board, moves, move_p + num_moves,
@@ -394,7 +401,7 @@ int generate_castling(ChessBoard *board, U64 *moves, U64 attacked, int move_p) {
     U64 castle_mask, check_mask;
 
     if (board->side == white) {
-        sq = rightmost_set(board->bitboards[white + king]);
+		sq = __builtin_ctzll(board->bitboards[white + king]);
 
         if (board->KC[white]) {
             king_to = sq - 2;
@@ -423,7 +430,7 @@ int generate_castling(ChessBoard *board, U64 *moves, U64 attacked, int move_p) {
             }
         }
     } else {
-        sq = rightmost_set(board->bitboards[black + king]);
+		sq = __builtin_ctzll(board->bitboards[black + king]);
 
         if (board->KC[black]) {
             king_to = sq - 2;
@@ -537,21 +544,6 @@ U64 attackers(ChessBoard *board, LookupTable *lookup, Side side) {
 		BB_CLEAR(bb, ind);
 	}
 
-    // Piece pieces[] = {rook, bishop, queen, knight, king};
-    // int len = sizeof(pieces) / sizeof(pieces[0]);
-
-    // for (int i = 0; i < len; i++) {
-    //     Piece p = pieces[i];
-	// 	U64 bb = board->bitboards[side + p];
-
-	// 	while (bb) {
-	// 		int ind = __builtin_ctzll(bb);
-    //         attack |= get_attacks(board, lookup, ind, p);
-
-    //         BB_CLEAR(bb, ind);
-    //     }
-    // }
-
     return attack;
 }
 
@@ -619,7 +611,6 @@ int generate_normal_moves(ChessBoard *board, LookupTable *table, U64 *moves,
 
         // iterate through piece locations)
         while (piece_bb) {
-            // int sq = rightmost_set(piece_bb);
 			int sq = __builtin_ctzll(piece_bb);
             U64 move_bb = get_moves(board, table, sq, p);
             move_bb &= (quiet ? ~enemies : enemies);  // **masking**

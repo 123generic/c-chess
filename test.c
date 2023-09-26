@@ -11,47 +11,6 @@
 #include "rng.h"
 
 // Tests
-void test_rightmost_set(void) {
-    // Test with 0
-    if (rightmost_set(0) != -1) {
-        printf("Test failed: input 0\n");
-        return;
-    }
-
-    // Test with 1
-    if (rightmost_set(1) != 0) {
-        printf("Test failed: input 1\n");
-        return;
-    }
-
-    // Test with 2 (10 in binary)
-    if (rightmost_set(2) != 1) {
-        printf("Test failed: input 2\n");
-        return;
-    }
-
-    // Test with 8 (1000 in binary)
-    if (rightmost_set(8) != 3) {
-        printf("Test failed: input 8\n");
-        return;
-    }
-
-    // Test with 9 (1001 in binary)
-    if (rightmost_set(9) != 0) {
-        printf("Test failed: input 9\n");
-        return;
-    }
-
-    // Test with large number
-    U64 large_num = ((U64)1 << 63);  // The most significant bit is set
-    if (rightmost_set(large_num) != 63) {
-        printf("Test failed: input large_num\n");
-        return;
-    }
-
-    printf("test_rightmost_set: All tests passed.\n");
-}
-
 void test_ChessBoard_str(void) {
     ChessBoard board;
     char str[65];  // 64 + 1 for null terminator
@@ -1704,8 +1663,6 @@ void debug_find_magic_rook(void) {
 }
 
 void unit_test(void) {
-    test_rightmost_set();
-
     test_ChessBoard_str();
     test_ChessBoard_to_FEN();
 
@@ -1754,9 +1711,8 @@ void fuzz(void) {
 int main(void) {
     init_genrand64(0x8c364d19345930e2);  // drawn on random day
 
-	// test_legal_move();
     // debug_print();
-	fuzz();
-    // unit_test();
+	// fuzz();
+    unit_test();
     return 0;
 }
