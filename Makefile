@@ -34,4 +34,4 @@ perft: $(PERFT_SRC)
 	./$(PERFT_EXEC)
 
 clean:
-	rm -rf $(CHESS_EXEC) $(TEST_EXEC) $(PERFT_EXEC) $(TEST_EXEC).dSYM __pycache__
+	rm -rf $(CHESS_EXEC) $(TEST_EXEC) $(PERFT_EXEC) $(TEST_EXEC).dSYM __pycache__ gmon.out
