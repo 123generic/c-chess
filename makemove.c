@@ -18,16 +18,20 @@ void update_castling_rights(ChessBoard *board, U64 move) {
     }
 
     // If our rook moves
-    if (piece == rook && from % 8 == 0) {
+	int rook_kc = board->side == white ? 0 : 56;
+	int rook_qc = board->side == white ? 7 : 63;
+    if (piece == rook && from == rook_kc) {
         board->KC[board->side] = 0;
-    } else if (piece == rook && from % 8 == 7) {
+    } else if (piece == rook && from == rook_qc) {
         board->QC[board->side] = 0;
     }
 
     // If opponent's rook is captured
-    if (captured == rook && to % 8 == 0) {
+	rook_kc = board->side == white ? 56 : 0;
+	rook_qc = board->side == white ? 63 : 7;
+    if (captured == rook && to == rook_kc) {
         board->KC[!board->side] = 0;
-    } else if (captured == rook && to % 8 == 7) {
+    } else if (captured == rook && to == rook_qc) {
         board->QC[!board->side] = 0;
     }
 }
@@ -69,9 +73,8 @@ ChessBoard make_move(ChessBoard board, U64 move) {
             break;
 
         case PROMOTION:
-            OFF(piece, board.side, from);
+            OFF(piece, board.side, to);
             ON(promotion_piece, board.side, to);
-            // Note: all pieces already set
 
             if (captured != empty) {
                 OFF(captured, !board.side, to);

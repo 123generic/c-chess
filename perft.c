@@ -63,16 +63,26 @@ int main(void) {
 	init_LookupTable(&lookup);
 
 	ChessBoard board;
-	// ChessBoard_from_FEN(&board, "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8");
-	ChessBoard_from_FEN(&board, "rnQq1k1r/pp2bppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R b KQ - 1 8");
+	ChessBoard_from_FEN(&board, "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1");
+	// ChessBoard_from_FEN(&board, "r3k2r/Pppp1ppp/1b3nbN/nPP5/BB2P3/q4N2/Pp1P2PP/R2Q1RK1 b kq - 0 1");
+	// ChessBoard_from_FEN(&board, "r3k2r/Pppp1ppp/1b3nbN/nPP5/BB2P3/q4N2/P2P2PP/r2Q1RK1 w kq - 0 1");
+	// ChessBoard_from_FEN(&board, "r3k2r/Pppp1ppp/1b3nbN/nPP5/BB2P3/q4N2/P2P2PP/Q4RK1 b kq - 0 1");
 
-	// for (int depth = 1; depth <= 7; depth++) {
-	// 	U64 nodes = perft(board, &lookup, depth);
-	// 	printf("Depth %d: %llu\n", depth, nodes);
-	// }
+	// int from = 4, to = 7;
+	// Piece piece = queen, captured = rook;
+	// MoveType move_type = NORMAL;
 
-	U64 total = divide(board, &lookup, 1);
-	printf("Total: %llu\n", total);
+	// U64 move = from | (to << 6) | (piece << 12) | (captured << 16) | (move_type << 20);
+
+	// board = make_move(board, move);
+
+	for (int depth = 1; depth <= 6; depth++) {
+		U64 nodes = perft(board, &lookup, depth);
+		printf("Depth %d: %llu\n", depth, nodes);
+	}
+
+	// U64 total = divide(board, &lookup, 5);
+	// printf("Total: %llu\n", total);
 
 	return 0;
 }
