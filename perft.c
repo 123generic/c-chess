@@ -1,3 +1,4 @@
+#include "common.h"
 #include "board.h"
 #include "lookup.h"
 #include "movegen.h"
@@ -64,25 +65,11 @@ int main(void) {
 
 	ChessBoard board;
 	ChessBoard_from_FEN(&board, "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1");
-	
-	// ChessBoard_from_FEN(&board, "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1");
-
-
-	// int from = 4, to = 7;
-	// Piece piece = queen, captured = rook;
-	// MoveType move_type = NORMAL;
-
-	// U64 move = from | (to << 6) | (piece << 12) | (captured << 16) | (move_type << 20);
-
-	// board = make_move(board, move);
 
 	for (int depth = 1; depth <= 5; depth++) {
 		U64 nodes = perft(board, &lookup, depth);
 		printf("Depth %d: %llu\n", depth, nodes);
 	}
-
-	// U64 total = divide(board, &lookup, 5);
-	// printf("Total: %llu\n", total);
 
 	return 0;
 }
