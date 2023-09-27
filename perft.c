@@ -6,6 +6,7 @@
 #include "rng.h"
 
 #include <stdio.h>
+#include <assert.h>
 
 U64 perft(ChessBoard board, LookupTable *lookup, int depth) {
 	if (depth == 0) return 1;
@@ -21,6 +22,9 @@ U64 perft(ChessBoard board, LookupTable *lookup, int depth) {
 
 		for (int move_p = 0; move_p < num_moves; move_p++) {
 			ChessBoard new_board = make_move(board, moves[move_p]);
+			#ifdef DEBUG
+			assert(new_board.hash == manual_compute_hash(&new_board));
+			#endif
 			if (is_legal(&new_board, attackers(&new_board, lookup, new_board.side), !new_board.side)) {
 				total_moves += perft(new_board, lookup, depth - 1);
 			}
@@ -59,12 +63,14 @@ U64 divide(ChessBoard board, LookupTable *lookup, int depth) {
 
 int main(void) {
 	init_genrand64(0x8c364d19345930e2);  // drawn on random day
+	init_zobrist();
 
 	LookupTable lookup;
 	init_LookupTable(&lookup);
 
 	ChessBoard board;
 	ChessBoard_from_FEN(&board, "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1");
+	// ChessBoard_from_FEN(&board, "k7/8/8/8/8/8/8/K7 w - - 0 1");
 
 	for (int depth = 1; depth <= 5; depth++) {
 		U64 nodes = perft(board, &lookup, depth);

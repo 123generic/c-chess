@@ -11,31 +11,33 @@ CFLAGS = -Wall -Wextra -Werror -Wshadow -Wfloat-equal \
 CFASTFLAGS = -std=c99 -O3
 PROF_FLAGS = -g -pg
 
-# Target executable names
-CHESS_EXEC = chess
-PERFT_EXEC = perft
-TEST_EXEC = test_program
-
 # Source files
 CHESS_SRC = board.c lookup.c makemove.c movegen.c rng.c
 TEST_SRC = test.c
 PERFT_SRC = perft.c
 
-all: $(CHESS_SRC)
-	$(CC) $(CFASTFLAGS) -o $(CHESS_EXEC) $(CHESS_SRC)
-	./$(CHESS_EXEC)
+# Trash
+TRASH = chess test perft_prof perft_test perft *.dSYM __pycache__ gmon.out
 
-test: $(TEST_SRC)
-	$(CC) $(CFLAGS) -o $(TEST_EXEC) $(TEST_SRC) $(CHESS_SRC)
-	./$(TEST_EXEC)
+all: chess
+	$(CC) $(CFASTFLAGS) -o chess $(CHESS_SRC)
+	./chess
 
-perft_prof:
-	$(CC) $(CFASTFLAGS) -o $(PERFT_EXEC) $(CHESS_SRC) $(PERFT_SRC) $(PROF_FLAGS)
-	./$(PERFT_EXEC)
+test: test
+	$(CC) $(CFLAGS) -o test $(TEST_SRC) $(CHESS_SRC)
+	./test
 
-perft: 
-	$(CC) $(CFASTFLAGS) -o $(PERFT_EXEC) $(CHESS_SRC) $(PERFT_SRC)
-	./$(PERFT_EXEC)
+perft_prof: $(CHESS_SRC) $(PERFT_SRC)
+	$(CC) $(CFASTFLAGS) -o perft_prof $(CHESS_SRC) $(PERFT_SRC) $(PROF_FLAGS)
+	./perft_prof
+
+perft_test: $(CHESS_SRC) $(PERFT_SRC)
+	$(CC) $(CFLAGS) -o perft_test $(CHESS_SRC) $(PERFT_SRC) -D DEBUG
+	./perft_test
+
+perft: $(CHESS_SRC) $(PERFT_SRC)
+	$(CC) $(CFASTFLAGS) -o perft $(CHESS_SRC) $(PERFT_SRC)
+	./perft
 
 clean:
-	rm -rf $(CHESS_EXEC) $(TEST_EXEC) $(PERFT_EXEC) $(TEST_EXEC).dSYM __pycache__ gmon.out
+	rm -rf $(TRASH)

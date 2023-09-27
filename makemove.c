@@ -13,6 +13,8 @@ void update_castling_rights(ChessBoard *board, U64 move) {
 
     // If our king moves
     if (piece == king) {
+		board->hash ^= board->KC[board->side] != 0 ? zobrist.castling[board->side][0] : 0;
+		board->hash ^= board->QC[board->side] != 0 ? zobrist.castling[board->side][1] : 0;
         board->KC[board->side] = 0;
         board->QC[board->side] = 0;
     }
@@ -21,8 +23,10 @@ void update_castling_rights(ChessBoard *board, U64 move) {
 	int rook_kc = board->side == white ? 0 : 56;
 	int rook_qc = board->side == white ? 7 : 63;
     if (piece == rook && from == rook_kc) {
+		board->hash ^= board->KC[board->side] != 0 ? zobrist.castling[board->side][0] : 0;
         board->KC[board->side] = 0;
     } else if (piece == rook && from == rook_qc) {
+		board->hash ^= board->QC[board->side] != 0 ? zobrist.castling[board->side][1] : 0;
         board->QC[board->side] = 0;
     }
 
@@ -30,14 +34,16 @@ void update_castling_rights(ChessBoard *board, U64 move) {
 	rook_kc = board->side == white ? 56 : 0;
 	rook_qc = board->side == white ? 63 : 7;
     if (captured == rook && to == rook_kc) {
+		board->hash ^= board->KC[!board->side] != 0 ? zobrist.castling[!board->side][0] : 0;
         board->KC[!board->side] = 0;
     } else if (captured == rook && to == rook_qc) {
+		board->hash ^= board->QC[!board->side] != 0 ? zobrist.castling[!board->side][1] : 0;
         board->QC[!board->side] = 0;
     }
 }
 
-#define ON(a, b, sq) (board.bitboards[(a) + (b)] |= (1ULL << (sq)))
-#define OFF(a, b, sq) (board.bitboards[(a) + (b)] &= ~(1ULL << (sq)))
+#define ON(a, b, sq) (board.bitboards[(a) + (b)] |= (1ULL << (sq))); (board.hash ^= zobrist.piece[b][a / 2][sq])
+#define OFF(a, b, sq) (board.bitboards[(a) + (b)] &= ~(1ULL << (sq))); (board.hash ^= zobrist.piece[b][a / 2][sq])
 
 ChessBoard make_move(ChessBoard board, U64 move) {
     int from, to;
@@ -113,9 +119,11 @@ ChessBoard make_move(ChessBoard board, U64 move) {
     update_castling_rights(&board, move);
 
     // En Passant
+	board.hash ^= board.ep != -1 ? zobrist.ep[board.ep] : 0;
     board.ep = -1;
     if (piece == pawn && abs(from - to) == 16) {
         board.ep = (from + to) / 2;
+		board.hash ^= zobrist.ep[(from + to) / 2];
     }
 
     // Halfmove Clock
@@ -131,6 +139,7 @@ ChessBoard make_move(ChessBoard board, U64 move) {
 
     // Side
     board.side = !board.side;
+	board.hash ^= zobrist.side;
 
 	return board;
 }

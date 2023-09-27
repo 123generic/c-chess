@@ -165,7 +165,7 @@ U64 get_pawn_moves(ChessBoard *board, PawnMoveType move_type) {
 
 int extract_pawn_moves(ChessBoard *board, U64 *moves, int move_p,
                        U64 pawn_moves, PawnMoveType move_type) {
-    int ind, to, from, captured;
+    int to, from, captured;
     int num_moves = 0;
     int wtm = board->side == white;
 
@@ -273,6 +273,7 @@ int extract_pawn_moves(ChessBoard *board, U64 *moves, int move_p,
             }
             break;
 
+		int ind;
         case EN_PASSANT_LEFT:
             if (pawn_moves == 0) break;
 			ind = __builtin_ctzll(pawn_moves);
@@ -501,7 +502,6 @@ U64 attackers(ChessBoard *board, LookupTable *lookup, Side side) {
 
     // Other pieces
 	U64 bb;
-	U64 pieces = board->bitboards[all_pieces + all];
 
 	// rook
 	bb = board->bitboards[side + rook];

@@ -38,6 +38,9 @@ typedef struct {
 
     // Fullmove Number
     int fullmove_number;
+
+	// Zobrist hash
+	U64 hash;
 } ChessBoard;
 
 void init_ChessBoard(ChessBoard *board);
@@ -45,5 +48,22 @@ void ChessBoard_from_FEN(ChessBoard *board, char *fen);
 void ChessBoard_str(ChessBoard *board, char *str);
 void ChessBoard_to_FEN(ChessBoard *board, char *str);
 Piece ChessBoard_piece_at(ChessBoard *board, int ind);
+
+// Zobrist
+typedef struct {
+       // piece[side][piece][square] -> U64
+       U64 piece[2][6][64];
+       // side -> U64
+       U64 side;
+       // castling[side][king/queen] -> U64
+       U64 castling[2][2];
+       // ep[square] -> U64
+       U64 ep[64];
+} zobrist_t;
+
+extern zobrist_t zobrist;
+
+void init_zobrist(void);
+U64 manual_compute_hash(ChessBoard *board);
 
 #endif  // CHESS_H
