@@ -1,4 +1,5 @@
 #include "board.h"
+#include "common.h"
 #include "movegen.h"
 #include "lookup.h"
 
@@ -45,6 +46,9 @@ void update_castling_rights(ChessBoard *board, U64 move) {
 #define ON(a, b, sq) (board.bitboards[(a) + (b)] |= (1ULL << (sq))); (board.hash ^= zobrist.piece[b][a / 2][sq])
 #define OFF(a, b, sq) (board.bitboards[(a) + (b)] &= ~(1ULL << (sq))); (board.hash ^= zobrist.piece[b][a / 2][sq])
 
+#define ON_NO_HASH(piece, side, sq) (board.bitboards[(piece) + (side)] |= (1ULL << (sq)))
+#define OFF_NO_HASH(piece, side, sq) (board.bitboards[(piece) + (side)] &= ~(1ULL << (sq)))
+
 ChessBoard make_move(ChessBoard board, U64 move) {
     int from, to;
     Piece piece, captured;
@@ -62,6 +66,12 @@ ChessBoard make_move(ChessBoard board, U64 move) {
     ON(piece, board.side, to);
     OFF(piece, board.side, from);
 
+	ON_NO_HASH(all_pieces, board.side, to);
+	OFF_NO_HASH(all_pieces, board.side, from);
+	
+	ON_NO_HASH(all_pieces, all, to);
+	OFF_NO_HASH(all_pieces, all, from);
+
     // Conditional stuff
     switch (move_type) {
         int dir;
@@ -70,12 +80,15 @@ ChessBoard make_move(ChessBoard board, U64 move) {
             // Update board
             if (captured != empty) {
                 OFF(captured, !board.side, to);
+				OFF_NO_HASH(all_pieces, !board.side, to);
             }
             break;
 
         case EN_PASSANT:
             dir = 8 * (board.side - !board.side);
             OFF(pawn, !board.side, to + dir);
+			OFF_NO_HASH(all_pieces, !board.side, to + dir);
+			OFF_NO_HASH(all_pieces, all, to + dir);
             break;
 
         case PROMOTION:
@@ -84,17 +97,30 @@ ChessBoard make_move(ChessBoard board, U64 move) {
 
             if (captured != empty) {
                 OFF(captured, !board.side, to);
+				OFF_NO_HASH(all_pieces, !board.side, to);
             }
             break;
 
         case CASTLE_KING:
             OFF(rook, board.side, from - 3);
             ON(rook, board.side, to + 1);
+
+			OFF_NO_HASH(all_pieces, board.side, from - 3);
+			ON_NO_HASH(all_pieces, board.side, to + 1);
+
+			OFF_NO_HASH(all_pieces, all, from - 3);
+			ON_NO_HASH(all_pieces, all, to + 1);
             break;
 
         case CASTLE_QUEEN:
             OFF(rook, board.side, from + 4);
             ON(rook, board.side, to - 1);
+
+			OFF_NO_HASH(all_pieces, board.side, from + 4);
+			ON_NO_HASH(all_pieces, board.side, to - 1);
+
+			OFF_NO_HASH(all_pieces, all, from + 4);
+			ON_NO_HASH(all_pieces, all, to - 1);
             break;
 
         case UNKNOWN:
@@ -103,17 +129,6 @@ ChessBoard make_move(ChessBoard board, U64 move) {
             exit(1);
             break;
     }
-
-    board.bitboards[all_pieces + white] =
-        board.bitboards[pawn + white] | board.bitboards[knight + white] |
-        board.bitboards[bishop + white] | board.bitboards[rook + white] |
-        board.bitboards[queen + white] | board.bitboards[king + white];
-    board.bitboards[all_pieces + black] =
-        board.bitboards[pawn + black] | board.bitboards[knight + black] |
-        board.bitboards[bishop + black] | board.bitboards[rook + black] |
-        board.bitboards[queen + black] | board.bitboards[king + black];
-    board.bitboards[all_pieces + all] = board.bitboards[all_pieces + white] |
-                                         board.bitboards[all_pieces + black];
 
     // Castling
     update_castling_rights(&board, move);
@@ -146,3 +161,6 @@ ChessBoard make_move(ChessBoard board, U64 move) {
 
 #undef ON
 #undef OFF
+
+#undef ON_NO_HASH
+#undef OFF_NO_HASH
