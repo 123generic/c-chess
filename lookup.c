@@ -4,6 +4,8 @@
 
 #include "rng.h"
 
+LookupTable lookup;
+
 // Find magic
 U64 find_magic(U64 *mask, int sq, Piece p) {
     U64 magic, subset, occupancy;
@@ -46,8 +48,8 @@ U64 find_magic(U64 *mask, int sq, Piece p) {
 }
 
 // Rook magics
-void gen_occupancy_rook(LookupTable *lookup_table) {
-    U64 *mask = lookup_table->rook_mask;
+void gen_occupancy_rook(void) {
+    U64 *mask = lookup.rook_mask;
     U64 bb;
     int sq, cell;
 
@@ -130,8 +132,8 @@ void fill_rook_moves(U64 *move, U64 mask, U64 magic, int sq) {
 }
 
 // Bishop magics
-void gen_occupancy_bishop(LookupTable *lookup_table) {
-    U64 *mask = lookup_table->bishop_mask;
+void gen_occupancy_bishop(void) {
+    U64 *mask = lookup.bishop_mask;
     U64 bb;
     int sq, cell;
 
@@ -222,8 +224,8 @@ void fill_bishop_moves(U64 *move, U64 mask, U64 magic, int sq) {
     }
 }
 
-void gen_king_moves(LookupTable *lookup_table) {
-    U64 *bb = lookup_table->king_move;
+void gen_king_moves(void) {
+    U64 *bb = lookup.king_move;
     U64 moves;
     int offsets[] = {9, 8, 7, 1, -1, -7, -8, -9};
     int offsets_len = sizeof(offsets) / sizeof(offsets[0]);
@@ -245,8 +247,8 @@ void gen_king_moves(LookupTable *lookup_table) {
     }
 }
 
-void gen_knight_moves(LookupTable *lookup_table) {
-    U64 *bb = lookup_table->knight_move;
+void gen_knight_moves(void) {
+    U64 *bb = lookup.knight_move;
     U64 moves;
     int offsets[] = {17, 15, 6, -10, -17, -15, -6, 10};
     int offsets_len = sizeof(offsets) / sizeof(offsets[0]);
@@ -272,25 +274,25 @@ void gen_knight_moves(LookupTable *lookup_table) {
     }
 }
 
-void init_LookupTable(LookupTable *lookup_table) {
+void init_LookupTable(void) {
     // Magics
-    gen_occupancy_bishop(lookup_table);
-    gen_occupancy_rook(lookup_table);
+    gen_occupancy_bishop();
+    gen_occupancy_rook();
 
     for (int i = 0; i < 64; i++) {
-        lookup_table->bishop_magic[i] =
-            find_magic(lookup_table->bishop_mask, i, bishop);
-        fill_bishop_moves(lookup_table->bishop_move,
-                          lookup_table->bishop_mask[i],
-                          lookup_table->bishop_magic[i], i);
+        lookup.bishop_magic[i] =
+            find_magic(lookup.bishop_mask, i, bishop);
+        fill_bishop_moves(lookup.bishop_move,
+                          lookup.bishop_mask[i],
+                          lookup.bishop_magic[i], i);
 
-        lookup_table->rook_magic[i] =
-            find_magic(lookup_table->rook_mask, i, rook);
-        fill_rook_moves(lookup_table->rook_move, lookup_table->rook_mask[i],
-                        lookup_table->rook_magic[i], i);
+        lookup.rook_magic[i] =
+            find_magic(lookup.rook_mask, i, rook);
+        fill_rook_moves(lookup.rook_move, lookup.rook_mask[i],
+                        lookup.rook_magic[i], i);
     }
 
     // Other pieces
-    gen_king_moves(lookup_table);
-    gen_knight_moves(lookup_table);
+    gen_king_moves();
+    gen_knight_moves();
 }

@@ -66,4 +66,7 @@ extern zobrist_t zobrist;
 void init_zobrist(void);
 U64 manual_compute_hash(ChessBoard *board);
 
+// init
+void global_init(void);
+
 #endif  // CHESS_H

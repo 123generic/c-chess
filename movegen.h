@@ -52,26 +52,26 @@ int extract_pawn_moves(ChessBoard *board, U64 *moves, int move_p,
                        U64 pawn_moves, PawnMoveType move_type);
 
 // Other pieces
-U64 get_moves(ChessBoard *board, LookupTable *lookup, int sq, Piece p);
+U64 get_moves(ChessBoard *board, int sq, Piece p);
 int extract_moves(ChessBoard *board, U64 *moves, int move_p, U64 move_bb,
                   int sq, Piece p, int quiet);
-int extract_all_moves(ChessBoard *board, LookupTable *table, U64 *moves,
+int extract_all_moves(ChessBoard *board, U64 *moves,
                       int move_p, Piece p);
 
 // Castling
 int generate_castling(ChessBoard *board, U64 *moves, U64 attacked, int move_p);
 
 // Attackers
-U64 get_attacks(ChessBoard *board, LookupTable *lookup, int sq, Piece p);
-U64 attackers(ChessBoard *board, LookupTable *lookup, Side side);
+U64 get_attacks(ChessBoard *board, int sq, Piece p);
+U64 attackers(ChessBoard *board, Side side);
 int is_legal(ChessBoard *board, U64 attacked, Side side);
 
 // Move Generation
 int generate_promotions(ChessBoard *board, U64 *moves);
 int generate_normal_moves_pawn(ChessBoard *board, U64 *moves, int quiet);
-int generate_normal_moves(ChessBoard *board, LookupTable *table, U64 *moves,
+int generate_normal_moves(ChessBoard *board, U64 *moves,
                           int quiet);
-int generate_moves(ChessBoard *board, LookupTable *table, U64 *moves,
+int generate_moves(ChessBoard *board, U64 *moves,
                    U64 attackers, MoveGenStage stage);
 
 // Utilities

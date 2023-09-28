@@ -301,41 +301,41 @@ int extract_pawn_moves(ChessBoard *board, U64 *moves, int move_p,
 }
 
 // Non-pawn move extraction
-inline U64 get_attacks(ChessBoard *board, LookupTable *lookup, int sq, Piece p) {
+inline U64 get_attacks(ChessBoard *board, int sq, Piece p) {
     U64 pieces, mask, magic, moves;
     int ind, shift_amt;
 
     pieces = board->bitboards[all_pieces + all];
     switch (p) {
         case rook:
-            mask = lookup->rook_mask[sq];
-            magic = lookup->rook_magic[sq];
+            mask = lookup.rook_mask[sq];
+            magic = lookup.rook_magic[sq];
             shift_amt = 64 - 12;
 
             ind = ((pieces & mask) * magic) >> shift_amt;
-            moves = lookup->rook_move[4096 * sq + ind];
+            moves = lookup.rook_move[4096 * sq + ind];
             break;
 
         case bishop:
-            mask = lookup->bishop_mask[sq];
-            magic = lookup->bishop_magic[sq];
+            mask = lookup.bishop_mask[sq];
+            magic = lookup.bishop_magic[sq];
             shift_amt = 64 - 9;
 
             ind = ((pieces & mask) * magic) >> shift_amt;
-            moves = lookup->bishop_move[512 * sq + ind];
+            moves = lookup.bishop_move[512 * sq + ind];
             break;
 
         case queen:
-            moves = get_attacks(board, lookup, sq, rook) |
-                    get_attacks(board, lookup, sq, bishop);
+            moves = get_attacks(board, sq, rook) |
+                    get_attacks(board, sq, bishop);
             break;
 
         case knight:
-            moves = lookup->knight_move[sq];
+            moves = lookup.knight_move[sq];
             break;
 
         case king:
-            moves = lookup->king_move[sq];
+            moves = lookup.king_move[sq];
             break;
 
         default:
@@ -347,9 +347,9 @@ inline U64 get_attacks(ChessBoard *board, LookupTable *lookup, int sq, Piece p) 
     return moves;
 }
 
-U64 get_moves(ChessBoard *board, LookupTable *lookup, int sq, Piece p) {
+U64 get_moves(ChessBoard *board, int sq, Piece p) {
     U64 friendlies = board->bitboards[all_pieces + board->side];
-    return get_attacks(board, lookup, sq, p) & ~friendlies;
+    return get_attacks(board, sq, p) & ~friendlies;
 }
 
 int extract_moves(ChessBoard *board, U64 *moves, int move_p, U64 move_bb,
@@ -371,7 +371,7 @@ int extract_moves(ChessBoard *board, U64 *moves, int move_p, U64 move_bb,
 }
 
 // For debugging only
-int extract_all_moves(ChessBoard *board, LookupTable *table, U64 *moves,
+int extract_all_moves(ChessBoard *board, U64 *moves,
                       int move_p, Piece p) {
     int sq, num_moves;
     U64 bb, move_bb, enemies;
@@ -382,7 +382,7 @@ int extract_all_moves(ChessBoard *board, LookupTable *table, U64 *moves,
 
 	while (bb) {
 		sq = __builtin_ctzll(bb);
-        move_bb = get_moves(board, table, sq, p);
+        move_bb = get_moves(board, sq, p);
 
         num_moves += extract_moves(board, moves, move_p + num_moves,
                                    move_bb & enemies, sq, p, 0);
@@ -466,7 +466,7 @@ int generate_castling(ChessBoard *board, U64 *moves, U64 attacked, int move_p) {
 
 // Attackers
 // side: if `black`, gets squares attacked by black pieces, likewise for white
-U64 attackers(ChessBoard *board, LookupTable *lookup, Side side) {
+U64 attackers(ChessBoard *board, Side side) {
     U64 attack = 0;
 
     // Pawns
@@ -507,7 +507,7 @@ U64 attackers(ChessBoard *board, LookupTable *lookup, Side side) {
 	bb = board->bitboards[side + rook];
 	while (bb) {
 		int ind = __builtin_ctzll(bb);
-		attack |= get_attacks(board, lookup, ind, rook);
+		attack |= get_attacks(board, ind, rook);
 
 		BB_CLEAR(bb, ind);
 	}
@@ -515,7 +515,7 @@ U64 attackers(ChessBoard *board, LookupTable *lookup, Side side) {
 	bb = board->bitboards[side + bishop];
 	while (bb) {
 		int ind = __builtin_ctzll(bb);
-		attack |= get_attacks(board, lookup, ind, bishop);
+		attack |= get_attacks(board, ind, bishop);
 
 		BB_CLEAR(bb, ind);
 	}
@@ -523,7 +523,7 @@ U64 attackers(ChessBoard *board, LookupTable *lookup, Side side) {
 	bb = board->bitboards[side + queen];
 	while (bb) {
 		int ind = __builtin_ctzll(bb);
-		attack |= get_attacks(board, lookup, ind, queen);
+		attack |= get_attacks(board, ind, queen);
 
 		BB_CLEAR(bb, ind);
 	}
@@ -531,7 +531,7 @@ U64 attackers(ChessBoard *board, LookupTable *lookup, Side side) {
 	bb = board->bitboards[side + knight];
 	while (bb) {
 		int ind = __builtin_ctzll(bb);
-		attack |= get_attacks(board, lookup, ind, knight);
+		attack |= get_attacks(board, ind, knight);
 
 		BB_CLEAR(bb, ind);
 	}
@@ -539,7 +539,7 @@ U64 attackers(ChessBoard *board, LookupTable *lookup, Side side) {
 	bb = board->bitboards[side + king];
 	while (bb) {
 		int ind = __builtin_ctzll(bb);
-		attack |= get_attacks(board, lookup, ind, king);
+		attack |= get_attacks(board, ind, king);
 
 		BB_CLEAR(bb, ind);
 	}
@@ -592,7 +592,7 @@ int generate_normal_moves_pawn(ChessBoard *board, U64 *moves, int quiet) {
     return num_moves;
 }
 
-int generate_normal_moves(ChessBoard *board, LookupTable *table, U64 *moves,
+int generate_normal_moves(ChessBoard *board, U64 *moves,
                           int quiet) {
     int num_moves = 0;
 
@@ -612,7 +612,7 @@ int generate_normal_moves(ChessBoard *board, LookupTable *table, U64 *moves,
         // iterate through piece locations)
         while (piece_bb) {
 			int sq = __builtin_ctzll(piece_bb);
-            U64 move_bb = get_moves(board, table, sq, p);
+            U64 move_bb = get_moves(board, sq, p);
             move_bb &= (quiet ? ~enemies : enemies);  // **masking**
 
             num_moves +=
@@ -626,7 +626,7 @@ int generate_normal_moves(ChessBoard *board, LookupTable *table, U64 *moves,
 }
 
 // attackers is squares attacked by !board->side (enemies)
-int generate_moves(ChessBoard *board, LookupTable *table, U64 *moves,
+int generate_moves(ChessBoard *board, U64 *moves,
                    U64 attackers, MoveGenStage stage) {
     switch (stage) {
         case promotions:
@@ -634,12 +634,12 @@ int generate_moves(ChessBoard *board, LookupTable *table, U64 *moves,
 
         case captures:
         case losing:
-            return generate_normal_moves(board, table, moves, 0);
+            return generate_normal_moves(board, moves, 0);
 
         case castling:
             return generate_castling(board, moves, attackers, 0);
 
         case quiets:
-            return generate_normal_moves(board, table, moves, 1);
+            return generate_normal_moves(board, moves, 1);
     }
 }

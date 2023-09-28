@@ -196,9 +196,6 @@ void test_extract_pawn_moves(void) {
 
 void test_gen_occupancy_rook(void) {
     U64 expected;
-    LookupTable lookup = {0};
-
-    init_LookupTable(&lookup);
 
     // Test 1: 12 bits on
     expected = make_bitboard(
@@ -289,9 +286,6 @@ void test_manual_gen_rook_moves(void) {
 
 void test_gen_occupancy_bishop(void) {
     U64 expected;
-    LookupTable lookup = {0};
-
-    init_LookupTable(&lookup);
 
     // Test 1
     expected = make_bitboard(
@@ -399,9 +393,6 @@ void test_manual_gen_bishop_moves(void) {
 }
 
 void test_init_magic_rook(void) {
-    LookupTable lookup = {0};
-    init_LookupTable(&lookup);
-
     // Test 1: Validate that the magic table produces the correct moves
     // for a rook on square 27 and square 28 for specific occupancy boards.
     U64 occupancy1 = make_bitboard(
@@ -461,9 +452,6 @@ void test_init_magic_rook(void) {
 void test_init_magic_bishop(void) {
     U64 occupancy, expected, magic_moves;
     int sq, ind;
-
-    LookupTable lookup = {0};
-    init_LookupTable(&lookup);
 
     // Test 1
     occupancy = make_bitboard(
@@ -527,15 +515,14 @@ void test_extract_magic_moves_rook(void) {
     U64 moves[256] = {0};
     int move_p = 0;
 
-    LookupTable lookup = {0};
-    init_LookupTable(&lookup);
+    
 
     // Test 1
     ChessBoard_from_FEN(
         &board,
         "3B4/2R1p1Q1/1PRp1P1P/2pkb3/pp1r2P1/3p1N1P/r1nnP3/6K1 w - - 0 1");
 
-    move_p += extract_all_moves(&board, &lookup, moves, move_p, rook);
+    move_p += extract_all_moves(&board, moves, move_p, rook);
 
     char *expected_uci_1[] = {"c6c5", "c6d6", "c7a7", "c7b7",
                               "c7d7", "c7e7", "c7c8"};
@@ -557,7 +544,7 @@ void test_extract_magic_moves_rook(void) {
     ChessBoard_from_FEN(
         &board, "3k4/pq4bp/1pppK3/2P2P2/p6R/PRpB1b2/PP2Q1P1/3nn3 w - - 0 1");
 
-    move_p += extract_all_moves(&board, &lookup, moves, move_p, rook);
+    move_p += extract_all_moves(&board, moves, move_p, rook);
 
     char expected_uci_2[][5] = {"b3b4", "b3b5", "b3b6", "b3c3", "h4h1", "h4h2",
                                 "h4h3", "h4h5", "h4h6", "h4h7", "h4a4", "h4b4",
@@ -593,7 +580,7 @@ void test_extract_magic_moves_rook(void) {
     ChessBoard_from_FEN(
         &board, "N2K4/2p2pNP/2Q2pq1/6RP/3P2p1/1PPkb1p1/1pbB1p1P/r7 w - - 0 1");
 
-    move_p += extract_all_moves(&board, &lookup, moves, move_p, rook);
+    move_p += extract_all_moves(&board, moves, move_p, rook);
 
     char expected_uci_3[][5] = {"g5a5", "g5b5", "g5c5", "g5d5",
                                 "g5e5", "g5f5", "g5g4", "g5g6"};
@@ -629,8 +616,7 @@ void test_extract_magic_moves_bishop(void) {
     U64 moves[256] = {0};
     int move_p = 0;
 
-    LookupTable lookup = {0};
-    init_LookupTable(&lookup);
+    
 
     // Test 1
     memset(moves, 0, sizeof(moves));
@@ -638,7 +624,7 @@ void test_extract_magic_moves_bishop(void) {
     ChessBoard_from_FEN(
         &board, "6N1/5RKP/BbPP4/6P1/pR1n2qn/p1B1p3/Q1Pp3r/N1r4k w - - 0 1");
 
-    move_p += extract_all_moves(&board, &lookup, moves, move_p, bishop);
+    move_p += extract_all_moves(&board, moves, move_p, bishop);
 
     char expected_uci_1[][5] = {"a6b7", "a6c8", "a6b5", "a6c4", "a6d3",
                                 "a6e2", "a6f1", "c3d4", "c3d2", "c3b2"};
@@ -672,7 +658,7 @@ void test_extract_magic_moves_bishop(void) {
     ChessBoard_from_FEN(
         &board, "7b/P3QKpk/1rPq2n1/1b6/pB3p1p/p4p1N/PP1p1rP1/3B4 b - - 0 1");
 
-    move_p += extract_all_moves(&board, &lookup, moves, move_p, bishop);
+    move_p += extract_all_moves(&board, moves, move_p, bishop);
 
     char expected_uci_2[][5] = {"b5a6", "b5c6", "b5c4", "b5d3", "b5e2", "b5f1"};
     char actual_uci_2[sizeof(expected_uci_2) / sizeof(expected_uci_2[0])][5];
@@ -707,8 +693,7 @@ void test_extract_queen_moves(void) {
     U64 moves[256] = {0};
     int move_p = 0;
 
-    LookupTable lookup = {0};
-    init_LookupTable(&lookup);
+    
 
     // Test 1
     memset(moves, 0, sizeof(moves));
@@ -716,7 +701,7 @@ void test_extract_queen_moves(void) {
     ChessBoard_from_FEN(
         &board, "k5r1/Pp6/P1p1RRpb/4rpQq/2PB1pp1/1n2P1n1/1K1N3p/8 w - - 0 1");
 
-    move_p += extract_all_moves(&board, &lookup, moves, move_p, queen);
+    move_p += extract_all_moves(&board, moves, move_p, queen);
 
     char expected_uci_1[][5] = {"g5g6", "g5g4", "g5f4", "g5f5",
                                 "g5h4", "g5h5", "g5h6"};
@@ -750,7 +735,7 @@ void test_extract_queen_moves(void) {
     ChessBoard_from_FEN(
         &board, "1N4RB/1p2KNp1/Rp3p2/1kp1bq1P/2nP1rP1/2P2Q1r/p7/4n3 b - - 0 1");
 
-    move_p += extract_all_moves(&board, &lookup, moves, move_p, queen);
+    move_p += extract_all_moves(&board, moves, move_p, queen);
 
     char expected_uci_2[][5] = {"f5b1", "f5c2", "f5d3", "f5e4", "f5g6", "f5h7",
                                 "f5c8", "f5d7", "f5e6", "f5g4", "f5g5", "f5h5"};
@@ -786,16 +771,13 @@ void test_extract_king_moves(void) {
     U64 moves[256] = {0};
     int move_p = 0;
 
-    LookupTable lookup = {0};
-    init_LookupTable(&lookup);
-
     // Test 1
     memset(moves, 0, sizeof(moves));
     move_p = 0;
     ChessBoard_from_FEN(
         &board, "8/bR4K1/P1p1bp1p/1nk1N3/5BP1/1PP1p1nQ/1P2BPP1/R2q4 w - - 0 1");
 
-    move_p += extract_all_moves(&board, &lookup, moves, move_p, king);
+    move_p += extract_all_moves(&board, moves, move_p, king);
 
     char expected_uci_1[][5] = {"g7f6", "g7g6", "g7h6", "g7h7",
                                 "g7h8", "g7g8", "g7f8", "g7f7"};
@@ -830,7 +812,7 @@ void test_extract_king_moves(void) {
         &board,
         "2B1nk1b/1pPR4/1P6/1r1p4/2p1pP1r/2QnNp2/1PR1b1P1/K3N3 b - - 0 1");
 
-    move_p += extract_all_moves(&board, &lookup, moves, move_p, king);
+    move_p += extract_all_moves(&board, moves, move_p, king);
 
     char expected_uci_2[][5] = {"f8e7", "f8f7", "f8g7", "f8g8"};
     char actual_uci_2[sizeof(expected_uci_2) / sizeof(expected_uci_2[0])][5];
@@ -865,16 +847,13 @@ void test_extract_knight_moves(void) {
     U64 moves[256] = {0};
     int move_p = 0;
 
-    LookupTable lookup = {0};
-    init_LookupTable(&lookup);
-
     // Test 1
     memset(moves, 0, sizeof(moves));
     move_p = 0;
     ChessBoard_from_FEN(
         &board, "n7/1Pnp1p1b/2QNrbP1/1r3p1P/2PP2P1/kp5p/N2p3q/3K4 w - - 0 1");
 
-    move_p += extract_all_moves(&board, &lookup, moves, move_p, knight);
+    move_p += extract_all_moves(&board, moves, move_p, knight);
 
     char expected_uci_1[][5] = {"a2b4", "a2c3", "a2c1", "d6c8", "d6e8",
                                 "d6f7", "d6f5", "d6e4", "d6b5"};
@@ -908,7 +887,7 @@ void test_extract_knight_moves(void) {
     ChessBoard_from_FEN(
         &board, "6N1/3p2Pp/3RBrk1/P1PPbq2/5pp1/2BPp3/1n2Pp2/QR3K2 b - - 0 1");
 
-    move_p += extract_all_moves(&board, &lookup, moves, move_p, knight);
+    move_p += extract_all_moves(&board, moves, move_p, knight);
 
     char expected_uci_2[][5] = {"b2a4", "b2c4", "b2d3", "b2d1"};
     char actual_uci_2[sizeof(expected_uci_2) / sizeof(expected_uci_2[0])][5];
@@ -1392,12 +1371,12 @@ void test_pawn_ep(void) {
     printf("%s: All tests passed.\n", __func__);
 }
 
-int run_single_test(LookupTable *lookup, char *fen, char expected_uci[][6],
+int run_single_test(char *fen, char expected_uci[][6],
                     int len) {
     ChessBoard board;
     ChessBoard_from_FEN(&board, fen);
 
-    U64 attacked = attackers(&board, lookup, !board.side);
+    U64 attacked = attackers(&board, !board.side);
 
     U64 moves[256] = {0};
     int move_p = 0;
@@ -1429,13 +1408,9 @@ int run_single_test(LookupTable *lookup, char *fen, char expected_uci[][6],
 }
 
 void test_gen_castling(void) {
-    LookupTable lookup = {0};
-    init_LookupTable(&lookup);
-
     // Test 1
     char expected_1[][6] = {"e1c1", "e1g1"};
-    if (!run_single_test(&lookup,
-                         "r3k2r/pppb1ppp/1nqp1b2/3np3/3PPB1B/2NP1QN1/PPP3PP/"
+    if (!run_single_test("r3k2r/pppb1ppp/1nqp1b2/3np3/3PPB1B/2NP1QN1/PPP3PP/"
                          "R3K2R w KQkq - 4 6",
                          expected_1, 2)) {
         printf("[%s %s:%d] Test 1 failed.\n", __func__, __FILE__, __LINE__);
@@ -1444,8 +1419,7 @@ void test_gen_castling(void) {
 
     // Test 2
     char expected_2[][6] = {"e8c8"};
-    if (!run_single_test(&lookup,
-                         "r3k2r/pppb1ppp/1nqp1b2/3np3/3PPB1B/2NP1QN1/PPP3PP/"
+    if (!run_single_test("r3k2r/pppb1ppp/1nqp1b2/3np3/3PPB1B/2NP1QN1/PPP3PP/"
                          "R3K2R b Qq - 4 6",
                          expected_2, 1)) {
         printf("[%s %s:%d] Test 2 failed.\n", __func__, __FILE__, __LINE__);
@@ -1454,8 +1428,7 @@ void test_gen_castling(void) {
 
     // Test 3
     char expected_3[][6] = {"e1c1"};
-    if (!run_single_test(&lookup,
-                         "r1N1k2r/pppb1ppp/1nqp1b2/3np3/3PPB1B/3P2N1/PPP3PP/"
+    if (!run_single_test("r1N1k2r/pppb1ppp/1nqp1b2/3np3/3PPB1B/3P2N1/PPP3PP/"
                          "R3KQ1R w KQkq - 4 6",
                          expected_3, 1)) {
         printf("[%s %s:%d] Test 3 failed.\n", __func__, __FILE__, __LINE__);
@@ -1467,37 +1440,32 @@ void test_gen_castling(void) {
 
 void test_is_legal(void) {
 	ChessBoard board;
-	LookupTable lookup = {0};
-	init_LookupTable(&lookup);
 
     // Test 1
     char fen1[] = "2B2k2/pqPPp2p/p1pPr2N/p1P5/1Rb1P2r/1NpP1nbP/p2nQKP1/2R1B3 w - - 0 1";
     ChessBoard_from_FEN(&board, fen1);
-    assert(!is_legal(&board, attackers(&board, &lookup, !board.side), board.side));
+    assert(!is_legal(&board, attackers(&board, !board.side), board.side));
 
     // Test 2
     char fen2[] = "2B2k2/pqPPp2p/p1pPr2N/p1P5/1Rb1P2r/1NpP1n1P/p2nQKPb/2R1B3 w - - 0 1";
     ChessBoard_from_FEN(&board, fen2);
-    assert(is_legal(&board, attackers(&board, &lookup, !board.side), board.side));
+    assert(is_legal(&board, attackers(&board, !board.side), board.side));
 
 	// Test 3
 	char fen3[] = "K4BR1/p1pr4/1Pr1pk1p/PnP2P1p/4N1Pp/PRqp3b/PNBbPp1n/5Q2 b - - 0 1";
 	ChessBoard_from_FEN(&board, fen3);
-	assert(!is_legal(&board, attackers(&board, &lookup, !board.side), board.side));
+	assert(!is_legal(&board, attackers(&board, !board.side), board.side));
 
 	// Test 4
 	char fen4[] = "K4BR1/p1pr4/1Pr1pk1p/PnP2P1p/5NPp/PRqp3b/PNBbPp1n/5Q2 b - - 0 1";
 	ChessBoard_from_FEN(&board, fen4);
-	assert(is_legal(&board, attackers(&board, &lookup, !board.side), board.side));
+	assert(is_legal(&board, attackers(&board, !board.side), board.side));
 
     printf("%s: All tests passed.\n", __func__);
 }
 
 
 void fuzz_generate_moves(void) {
-    LookupTable lookup = {0};
-    init_LookupTable(&lookup);
-
     ChessBoard board;
     U64 attacked;
 
@@ -1518,13 +1486,13 @@ void fuzz_generate_moves(void) {
         int num_moves = 0;
 
         ChessBoard_from_FEN(&board, fen);
-        attacked = attackers(&board, &lookup, !board.side);
+        attacked = attackers(&board, !board.side);
 
         MoveGenStage stage[] = {promotions, captures, castling, quiets};
         int len = sizeof(stage) / sizeof(stage[0]);
         for (int i = 0; i < len; i++) {
             num_moves +=
-                generate_moves(&board, &lookup, moves + num_moves, attacked, stage[i]);
+                generate_moves(&board, moves + num_moves, attacked, stage[i]);
         }
 
         for (int i = 0; i < num_moves; i++) {
@@ -1543,9 +1511,6 @@ void fuzz_generate_moves(void) {
 }
 
 void test_legal_move(void) {
-    LookupTable lookup = {0};
-    init_LookupTable(&lookup);
-
     ChessBoard board;
     U64 attacked;
 
@@ -1555,16 +1520,16 @@ void test_legal_move(void) {
 	int num_moves = 0;
 
 	ChessBoard_from_FEN(&board, "1N3k1r/p6p/1b5n/1QP3p1/1P3pK1/7P/R1r1NBPR/1N3B2 w - - 4 26");
-	attacked = attackers(&board, &lookup, !board.side);
+	attacked = attackers(&board, !board.side);
 
 	MoveGenStage stage[] = {promotions, captures, castling, quiets};
 	int len = sizeof(stage) / sizeof(stage[0]);
 	for (int i = 0; i < len; i++) {
-		num_moves = generate_moves(&board, &lookup, moves, attacked, stage[i]);
+		num_moves = generate_moves(&board, moves, attacked, stage[i]);
 
 		for (int move_p = 0; move_p < num_moves; move_p++) {
 			ChessBoard new_board = make_move(board, moves[move_p]);
-			if (is_legal(&new_board, attackers(&new_board, &lookup, new_board.side), !new_board.side)) {
+			if (is_legal(&new_board, attackers(&new_board, new_board.side), !new_board.side)) {
 				move_to_uci(moves[move_p], ascii_moves[ascii_move_p++]);
 			}
 		}
@@ -1581,8 +1546,7 @@ void test_legal_move(void) {
 }
 
 void fuzz_legal_moves(void) {
-    LookupTable lookup = {0};
-    init_LookupTable(&lookup);
+    
 
     ChessBoard board;
     U64 attacked;
@@ -1605,16 +1569,16 @@ void fuzz_legal_moves(void) {
         int num_moves = 0;
 
         ChessBoard_from_FEN(&board, fen);
-        attacked = attackers(&board, &lookup, !board.side);
+        attacked = attackers(&board, !board.side);
 
         MoveGenStage stage[] = {promotions, captures, castling, quiets};
         int len = sizeof(stage) / sizeof(stage[0]);
         for (int i = 0; i < len; i++) {
-            num_moves = generate_moves(&board, &lookup, moves, attacked, stage[i]);
+            num_moves = generate_moves(&board, moves, attacked, stage[i]);
 
 			for (int move_p = 0; move_p < num_moves; move_p++) {
 				ChessBoard new_board = make_move(board, moves[move_p]);
-				if (is_legal(&new_board, attackers(&new_board, &lookup, new_board.side), !new_board.side)) {
+				if (is_legal(&new_board, attackers(&new_board, new_board.side), !new_board.side)) {
 					move_to_uci(moves[move_p], ascii_moves[ascii_move_p++]);
 				}
 			}
@@ -1633,12 +1597,7 @@ void fuzz_legal_moves(void) {
 
 // Debugging with printf
 void debug_gen_occupancy_rook(void) {
-    LookupTable lookup = {0};
-    init_LookupTable(&lookup);
-
     U64 *occupancy_mask = lookup.rook_mask;
-
-    gen_occupancy_rook(&lookup);
 
     for (int i = 0; i < 64; i++) {
         printf("Bitboard for Square %d:\n", i);
@@ -1648,13 +1607,8 @@ void debug_gen_occupancy_rook(void) {
 }
 
 void debug_find_magic_rook(void) {
-    LookupTable lookup = {0};
-    init_LookupTable(&lookup);
-
     U64 magic;
     int sq;
-
-    gen_occupancy_rook(&lookup);
 
     for (sq = 0; sq < 64; sq++) {
         magic = find_magic(lookup.rook_mask, 0, rook);
@@ -1709,7 +1663,7 @@ void fuzz(void) {
 }
 
 int main(void) {
-    init_genrand64(0x8c364d19345930e2);  // drawn on random day
+    global_init();
 
     // debug_print();
 	// fuzz();

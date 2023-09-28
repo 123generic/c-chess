@@ -23,24 +23,26 @@ typedef struct {
     U64 knight_move[64];
 } LookupTable;
 
+extern LookupTable lookup;
+
 // Magic gen
 U64 find_magic(U64 *mask_table, int sq, Piece p);
 
 // Rooks
-void gen_occupancy_rook(LookupTable *lookup_table);
+void gen_occupancy_rook(void);
 U64 manual_gen_rook_moves(U64 bb, int square);
 void fill_rook_moves(U64 *move, U64 mask, U64 magic, int sq);
 
 // Bishops
-void gen_occupancy_bishop(LookupTable *lookup_table);
+void gen_occupancy_bishop(void);
 U64 manual_gen_bishop_moves(U64 bb, int square);
 void fill_bishop_moves(U64 *move, U64 mask, U64 magic, int sq);
 
 // Other
-void gen_king_moves(LookupTable *lookup_table);
-void gen_knight_moves(LookupTable *lookup_table);
+void gen_king_moves(void);
+void gen_knight_moves(void);
 
 // Init
-void init_LookupTable(LookupTable *lookup_table);
+void init_LookupTable(void);
 
 #endif  // MAGIC_H

@@ -354,3 +354,9 @@ Piece ChessBoard_piece_at(ChessBoard *board, int ind) {
             __FILE__, __func__, __LINE__);
     exit(1);
 }
+
+void global_init(void) {
+	init_genrand64(0x8c364d19345930e2);
+	init_zobrist();
+	init_LookupTable();
+}
