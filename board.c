@@ -8,10 +8,11 @@
 #include "lookup.h"
 #include "movegen.h"
 #include "rng.h"
+#include "hash_table.h"
 
 const int all_pieces = 12;
 
-void print_bb(U64 bb) {
+void print_bb(u64 bb) {
     int i;
     for (i = 0; i < 64; i++) {
         if (i % 8 == 0 && i != 0) {
@@ -23,8 +24,8 @@ void print_bb(U64 bb) {
 }
 
 // string must have length 64 + 1
-U64 make_bitboard(char *str) {
-    U64 bb;
+u64 make_bitboard(char *str) {
+    u64 bb;
 
     bb = 0;
     for (int i = 0; i < 64; i++) {
@@ -66,8 +67,8 @@ void init_zobrist(void) {
        zobrist.side = genrand64_int64();
 }
 
-U64 manual_compute_hash(ChessBoard *board) {
-       U64 hash = 0;
+u64 manual_compute_hash(ChessBoard *board) {
+       u64 hash = 0;
        int i;
        for (i = 0; i < 64; i++) {
                Piece piece = ChessBoard_piece_at(board, i);
@@ -229,7 +230,7 @@ void ChessBoard_from_FEN(ChessBoard *board, char *fen) {
 	board->hash = manual_compute_hash(board);
 }
 
-void _ChessBoard_str_helper(char *str, U64 bb, char piece) {
+void _ChessBoard_str_helper(char *str, u64 bb, char piece) {
 	while (bb) {
 		int ind = __builtin_ctzll(bb);
         str[63 - ind] = piece;
@@ -330,9 +331,8 @@ void ChessBoard_to_FEN(ChessBoard *board, char *str) {
     str[str_p] = '\0';
 }
 
-// TODO MUST CHANGE BACK
 Piece ChessBoard_piece_at(ChessBoard *board, int ind) {
-    U64 loc = 1ULL << ind;
+    u64 loc = 1ULL << ind;
     if ((board->bitboards[all_pieces + all] & loc) == 0) {
         return empty;
     }
@@ -359,4 +359,5 @@ void global_init(void) {
 	init_genrand64(0x8c364d19345930e2);
 	init_zobrist();
 	init_LookupTable();
+	init_hash_table();
 }

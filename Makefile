@@ -12,7 +12,7 @@ CFASTFLAGS = -std=c99 -O3
 PROF_FLAGS = -g -pg
 
 # Source files
-CHESS_SRC = board.c lookup.c makemove.c movegen.c rng.c
+CHESS_SRC = board.c lookup.c makemove.c movegen.c rng.c hash_table.c
 TEST_SRC = test.c
 PERFT_SRC = perft.c
 

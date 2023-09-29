@@ -7,9 +7,9 @@
 LookupTable lookup;
 
 // Find magic
-U64 find_magic(U64 *mask, int sq, Piece p) {
-    U64 magic, subset, occupancy;
-    U64 moves[4096] = {0};  // Initialize to zero
+u64 find_magic(u64 *mask, int sq, Piece p) {
+    u64 magic, subset, occupancy;
+    u64 moves[4096] = {0};  // Initialize to zero
     int ind, shift_amt;
 
     occupancy = mask[sq];
@@ -44,13 +44,13 @@ U64 find_magic(U64 *mask, int sq, Piece p) {
         }
     }
 
-    return (U64)-1;  // failure
+    return (u64)-1;  // failure
 }
 
 // Rook magics
 void gen_occupancy_rook(void) {
-    U64 *mask = lookup.rook_mask;
-    U64 bb;
+    u64 *mask = lookup.rook_mask;
+    u64 bb;
     int sq, cell;
 
     for (sq = 0; sq < 64; sq++) {
@@ -82,8 +82,8 @@ void gen_occupancy_rook(void) {
     }
 }
 
-U64 manual_gen_rook_moves(U64 bb, int sq) {
-    U64 moves;
+u64 manual_gen_rook_moves(u64 bb, int sq) {
+    u64 moves;
     int cell, should_break;
 
     moves = 0;
@@ -118,12 +118,12 @@ U64 manual_gen_rook_moves(U64 bb, int sq) {
     return moves;
 }
 
-void fill_rook_moves(U64 *move, U64 mask, U64 magic, int sq) {
+void fill_rook_moves(u64 *move, u64 mask, u64 magic, int sq) {
     // Subset iteration trick (Carry-Rippler)
-    U64 subset = 0;
+    u64 subset = 0;
     while (1) {
         int ind = (subset * magic) >> (64 - 12);
-        U64 mv = manual_gen_rook_moves(subset, sq);
+        u64 mv = manual_gen_rook_moves(subset, sq);
         move[4096 * sq + ind] = mv;
 
         subset = (subset - mask) & mask;
@@ -133,8 +133,8 @@ void fill_rook_moves(U64 *move, U64 mask, U64 magic, int sq) {
 
 // Bishop magics
 void gen_occupancy_bishop(void) {
-    U64 *mask = lookup.bishop_mask;
-    U64 bb;
+    u64 *mask = lookup.bishop_mask;
+    u64 bb;
     int sq, cell;
 
     for (sq = 0; sq < 64; sq++) {
@@ -171,8 +171,8 @@ void gen_occupancy_bishop(void) {
     }
 }
 
-U64 manual_gen_bishop_moves(U64 bb, int sq) {
-    U64 moves;
+u64 manual_gen_bishop_moves(u64 bb, int sq) {
+    u64 moves;
     int cell, should_break;
 
     moves = 0;
@@ -211,12 +211,12 @@ U64 manual_gen_bishop_moves(U64 bb, int sq) {
     return moves;
 }
 
-void fill_bishop_moves(U64 *move, U64 mask, U64 magic, int sq) {
+void fill_bishop_moves(u64 *move, u64 mask, u64 magic, int sq) {
     // Subset iteration trick (Carry-Rippler)
-    U64 subset = 0;
+    u64 subset = 0;
     while (1) {
         int ind = (subset * magic) >> (64 - 9);
-        U64 mv = manual_gen_bishop_moves(subset, sq);
+        u64 mv = manual_gen_bishop_moves(subset, sq);
         move[512 * sq + ind] = mv;
 
         subset = (subset - mask) & mask;
@@ -225,8 +225,8 @@ void fill_bishop_moves(U64 *move, U64 mask, U64 magic, int sq) {
 }
 
 void gen_king_moves(void) {
-    U64 *bb = lookup.king_move;
-    U64 moves;
+    u64 *bb = lookup.king_move;
+    u64 moves;
     int offsets[] = {9, 8, 7, 1, -1, -7, -8, -9};
     int offsets_len = sizeof(offsets) / sizeof(offsets[0]);
     int i, j, offset;
@@ -248,8 +248,8 @@ void gen_king_moves(void) {
 }
 
 void gen_knight_moves(void) {
-    U64 *bb = lookup.knight_move;
-    U64 moves;
+    u64 *bb = lookup.knight_move;
+    u64 moves;
     int offsets[] = {17, 15, 6, -10, -17, -15, -6, 10};
     int offsets_len = sizeof(offsets) / sizeof(offsets[0]);
     int i, j, offset;

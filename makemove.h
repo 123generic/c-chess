@@ -3,6 +3,6 @@
 
 #include "board.h"
 
-ChessBoard make_move(ChessBoard board, U64 move);
+ChessBoard make_move(ChessBoard board, u64 move);
 
 #endif  // MAKEMOVE_H

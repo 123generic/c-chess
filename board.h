@@ -13,15 +13,15 @@
 #define BOARD_GET(side, piece) (board->side##_##piece)
 
 // Bitboard Helpers
-void print_bb(U64 bb);
-U64 make_bitboard(char *str);
+void print_bb(u64 bb);
+u64 make_bitboard(char *str);
 
 // Bitboard
 typedef struct {
     // BitBoards
 	// indexed as bitboards[piece + side]
 	// extra bitboards indexed as 12 + white -> white_pieces, 12 + black -> black_pieces, 12 + all -> all_pieces
-	U64 bitboards[15];
+	u64 bitboards[15];
 
     // Board State
     Side side;
@@ -40,7 +40,7 @@ typedef struct {
     int fullmove_number;
 
 	// Zobrist hash
-	U64 hash;
+	u64 hash;
 } ChessBoard;
 
 void init_ChessBoard(ChessBoard *board);
@@ -51,20 +51,20 @@ Piece ChessBoard_piece_at(ChessBoard *board, int ind);
 
 // Zobrist
 typedef struct {
-       // piece[side][piece][square] -> U64
-       U64 piece[2][6][64];
-       // side -> U64
-       U64 side;
-       // castling[side][king/queen] -> U64
-       U64 castling[2][2];
-       // ep[square] -> U64
-       U64 ep[64];
+       // piece[side][piece][square] -> u64
+       u64 piece[2][6][64];
+       // side -> u64
+       u64 side;
+       // castling[side][king/queen] -> u64
+       u64 castling[2][2];
+       // ep[square] -> u64
+       u64 ep[64];
 } zobrist_t;
 
 extern zobrist_t zobrist;
 
 void init_zobrist(void);
-U64 manual_compute_hash(ChessBoard *board);
+u64 manual_compute_hash(ChessBoard *board);
 
 // init
 void global_init(void);

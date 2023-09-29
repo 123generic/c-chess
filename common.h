@@ -4,7 +4,9 @@
 #include <stdint.h>
 
 // Types
-typedef uint64_t U64;
+typedef uint64_t u64;
+typedef uint16_t u16;
+typedef int16_t i16;
 
 // Constant Macros
 #define RANK_1 0xff

@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void update_castling_rights(ChessBoard *board, U64 move) {
+void update_castling_rights(ChessBoard *board, u64 move) {
     int from = move & 0x3f;
     int to = (move >> 6) & 0x3f;
     Piece piece = (move >> 12) & 0xf;
@@ -49,7 +49,7 @@ void update_castling_rights(ChessBoard *board, U64 move) {
 #define ON_NO_HASH(piece, side, sq) (board.bitboards[(piece) + (side)] |= (1ULL << (sq)))
 #define OFF_NO_HASH(piece, side, sq) (board.bitboards[(piece) + (side)] &= ~(1ULL << (sq)))
 
-ChessBoard make_move(ChessBoard board, U64 move) {
+ChessBoard make_move(ChessBoard board, u64 move) {
     int from, to;
     Piece piece, captured;
     MoveType move_type;

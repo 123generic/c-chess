@@ -6,7 +6,7 @@
 #include "lookup.h"
 
 // Move representation
-// moves are packed into a U64 (LSB -> MSB)
+// moves are packed into a u64 (LSB -> MSB)
 // 0-5: from square
 // 6-11: to square
 // 12-15: piece
@@ -47,35 +47,35 @@ typedef enum {
 } MoveGenStage;
 
 // Pawns
-U64 get_pawn_moves(ChessBoard *board, PawnMoveType move_type);
-int extract_pawn_moves(ChessBoard *board, U64 *moves, int move_p,
-                       U64 pawn_moves, PawnMoveType move_type);
+u64 get_pawn_moves(ChessBoard *board, PawnMoveType move_type);
+int extract_pawn_moves(ChessBoard *board, u64 *moves, int move_p,
+                       u64 pawn_moves, PawnMoveType move_type);
 
 // Other pieces
-U64 get_moves(ChessBoard *board, int sq, Piece p);
-int extract_moves(ChessBoard *board, U64 *moves, int move_p, U64 move_bb,
+u64 get_moves(ChessBoard *board, int sq, Piece p);
+int extract_moves(ChessBoard *board, u64 *moves, int move_p, u64 move_bb,
                   int sq, Piece p, int quiet);
-int extract_all_moves(ChessBoard *board, U64 *moves,
+int extract_all_moves(ChessBoard *board, u64 *moves,
                       int move_p, Piece p);
 
 // Castling
-int generate_castling(ChessBoard *board, U64 *moves, U64 attacked, int move_p);
+int generate_castling(ChessBoard *board, u64 *moves, u64 attacked, int move_p);
 
 // Attackers
-U64 get_attacks(ChessBoard *board, int sq, Piece p);
-U64 attackers(ChessBoard *board, Side side);
-int is_legal(ChessBoard *board, U64 attacked, Side side);
+u64 get_attacks(ChessBoard *board, int sq, Piece p);
+u64 attackers(ChessBoard *board, Side side);
+int is_legal(ChessBoard *board, u64 attacked, Side side);
 
 // Move Generation
-int generate_promotions(ChessBoard *board, U64 *moves);
-int generate_normal_moves_pawn(ChessBoard *board, U64 *moves, int quiet);
-int generate_normal_moves(ChessBoard *board, U64 *moves,
+int generate_promotions(ChessBoard *board, u64 *moves);
+int generate_normal_moves_pawn(ChessBoard *board, u64 *moves, int quiet);
+int generate_normal_moves(ChessBoard *board, u64 *moves,
                           int quiet);
-int generate_moves(ChessBoard *board, U64 *moves,
-                   U64 attackers, MoveGenStage stage);
+int generate_moves(ChessBoard *board, u64 *moves,
+                   u64 attackers, MoveGenStage stage);
 
 // Utilities
-U64 move_from_uci(ChessBoard *board, char *uci);
-void move_to_uci(U64 move, char *uci);
+u64 move_from_uci(ChessBoard *board, char *uci);
+void move_to_uci(u64 move, char *uci);
 
 #endif  // MOVEGEN_H

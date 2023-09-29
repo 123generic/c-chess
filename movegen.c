@@ -8,7 +8,7 @@
 #include "lookup.h"
 
 // Utilities
-U64 move_from_uci(ChessBoard *board, char *uci) {
+u64 move_from_uci(ChessBoard *board, char *uci) {
     // uci: rank-file rank-file [promotion]
     // TODO: promotion
     int from, to, piece, captured;
@@ -26,7 +26,7 @@ U64 move_from_uci(ChessBoard *board, char *uci) {
 }
 
 // uci must have length 4+1 (or more)
-void move_to_uci(U64 move, char *uci) {
+void move_to_uci(u64 move, char *uci) {
     int from, to;
     MoveType type;
     Piece p;
@@ -66,8 +66,8 @@ void move_to_uci(U64 move, char *uci) {
 }
 
 // Pawn generation
-U64 get_pawn_moves(ChessBoard *board, PawnMoveType move_type) {
-    U64 pawns, moved_pawns, mask, sq;
+u64 get_pawn_moves(ChessBoard *board, PawnMoveType move_type) {
+    u64 pawns, moved_pawns, mask, sq;
     int wtm;
 
     moved_pawns = 0;
@@ -163,8 +163,8 @@ U64 get_pawn_moves(ChessBoard *board, PawnMoveType move_type) {
     return moved_pawns;
 }
 
-int extract_pawn_moves(ChessBoard *board, U64 *moves, int move_p,
-                       U64 pawn_moves, PawnMoveType move_type) {
+int extract_pawn_moves(ChessBoard *board, u64 *moves, int move_p,
+                       u64 pawn_moves, PawnMoveType move_type) {
     int to, from, captured;
     int num_moves = 0;
     int wtm = board->side == white;
@@ -301,8 +301,8 @@ int extract_pawn_moves(ChessBoard *board, U64 *moves, int move_p,
 }
 
 // Non-pawn move extraction
-inline U64 get_attacks(ChessBoard *board, int sq, Piece p) {
-    U64 pieces, mask, magic, moves;
+inline u64 get_attacks(ChessBoard *board, int sq, Piece p) {
+    u64 pieces, mask, magic, moves;
     int ind, shift_amt;
 
     pieces = board->bitboards[all_pieces + all];
@@ -347,12 +347,12 @@ inline U64 get_attacks(ChessBoard *board, int sq, Piece p) {
     return moves;
 }
 
-U64 get_moves(ChessBoard *board, int sq, Piece p) {
-    U64 friendlies = board->bitboards[all_pieces + board->side];
+u64 get_moves(ChessBoard *board, int sq, Piece p) {
+    u64 friendlies = board->bitboards[all_pieces + board->side];
     return get_attacks(board, sq, p) & ~friendlies;
 }
 
-int extract_moves(ChessBoard *board, U64 *moves, int move_p, U64 move_bb,
+int extract_moves(ChessBoard *board, u64 *moves, int move_p, u64 move_bb,
                   int sq, Piece p, int quiet) {
     int to, captured;
     int num_moves = 0;
@@ -371,10 +371,10 @@ int extract_moves(ChessBoard *board, U64 *moves, int move_p, U64 move_bb,
 }
 
 // For debugging only
-int extract_all_moves(ChessBoard *board, U64 *moves,
+int extract_all_moves(ChessBoard *board, u64 *moves,
                       int move_p, Piece p) {
     int sq, num_moves;
-    U64 bb, move_bb, enemies;
+    u64 bb, move_bb, enemies;
 
     num_moves = 0;
 	bb = board->bitboards[board->side + p];
@@ -397,9 +397,9 @@ int extract_all_moves(ChessBoard *board, U64 *moves,
 
 // Castling
 // attacked is squares attacked by !board->side (enemies)
-int generate_castling(ChessBoard *board, U64 *moves, U64 attacked, int move_p) {
+int generate_castling(ChessBoard *board, u64 *moves, u64 attacked, int move_p) {
     int sq, king_to, num_moves = 0;
-    U64 castle_mask, check_mask;
+    u64 castle_mask, check_mask;
 
     if (board->side == white) {
 		sq = __builtin_ctzll(board->bitboards[white + king]);
@@ -466,12 +466,12 @@ int generate_castling(ChessBoard *board, U64 *moves, U64 attacked, int move_p) {
 
 // Attackers
 // side: if `black`, gets squares attacked by black pieces, likewise for white
-U64 attackers(ChessBoard *board, Side side) {
-    U64 attack = 0;
+u64 attackers(ChessBoard *board, Side side) {
+    u64 attack = 0;
 
     // Pawns
-    U64 moved_pawns;
-	const U64 pawns = board->bitboards[side + pawn];
+    u64 moved_pawns;
+	const u64 pawns = board->bitboards[side + pawn];
 
     // left
     moved_pawns = pawns & ~FILE_1;
@@ -501,7 +501,7 @@ U64 attackers(ChessBoard *board, Side side) {
     }
 
     // Other pieces
-	U64 bb;
+	u64 bb;
 
 	// rook
 	bb = board->bitboards[side + rook];
@@ -547,16 +547,16 @@ U64 attackers(ChessBoard *board, Side side) {
     return attack;
 }
 
-int is_legal(ChessBoard *board, U64 attacked, Side side) {
-    U64 king_bb = board->bitboards[side + king];
-    U64 king_attackers = attacked & king_bb;
+int is_legal(ChessBoard *board, u64 attacked, Side side) {
+    u64 king_bb = board->bitboards[side + king];
+    u64 king_attackers = attacked & king_bb;
 
     return king_attackers == 0;
 }
 
 // Move generation
-int generate_promotions(ChessBoard *board, U64 *moves) {
-    U64 pawn_moves;
+int generate_promotions(ChessBoard *board, u64 *moves) {
+    u64 pawn_moves;
     int num_moves = 0;
 
     PawnMoveType promotion_types[] = {PAWN_PROMOTION, PROMOTION_CAPTURE_LEFT,
@@ -572,8 +572,8 @@ int generate_promotions(ChessBoard *board, U64 *moves) {
     return num_moves;
 }
 
-int generate_normal_moves_pawn(ChessBoard *board, U64 *moves, int quiet) {
-    U64 pawn_moves;
+int generate_normal_moves_pawn(ChessBoard *board, u64 *moves, int quiet) {
+    u64 pawn_moves;
     int num_moves = 0;
 
     PawnMoveType capture_types[] = {CAPTURE_LEFT, CAPTURE_RIGHT,
@@ -592,7 +592,7 @@ int generate_normal_moves_pawn(ChessBoard *board, U64 *moves, int quiet) {
     return num_moves;
 }
 
-int generate_normal_moves(ChessBoard *board, U64 *moves,
+int generate_normal_moves(ChessBoard *board, u64 *moves,
                           int quiet) {
     int num_moves = 0;
 
@@ -600,19 +600,19 @@ int generate_normal_moves(ChessBoard *board, U64 *moves,
     num_moves += generate_normal_moves_pawn(board, moves, quiet);
 
     // Others
-    U64 enemies = board->bitboards[all_pieces + !board->side];
+    u64 enemies = board->bitboards[all_pieces + !board->side];
     Piece pieces[] = {rook, bishop, queen, knight, king};
     int len = sizeof(pieces) / sizeof(pieces[0]);
 
     // iterate through piece types
     for (int i = 0; i < len; i++) {
         Piece p = pieces[i];
-		U64 piece_bb = board->bitboards[board->side + p];
+		u64 piece_bb = board->bitboards[board->side + p];
 
         // iterate through piece locations)
         while (piece_bb) {
 			int sq = __builtin_ctzll(piece_bb);
-            U64 move_bb = get_moves(board, sq, p);
+            u64 move_bb = get_moves(board, sq, p);
             move_bb &= (quiet ? ~enemies : enemies);  // **masking**
 
             num_moves +=
@@ -626,8 +626,8 @@ int generate_normal_moves(ChessBoard *board, U64 *moves,
 }
 
 // attackers is squares attacked by !board->side (enemies)
-int generate_moves(ChessBoard *board, U64 *moves,
-                   U64 attackers, MoveGenStage stage) {
+int generate_moves(ChessBoard *board, u64 *moves,
+                   u64 attackers, MoveGenStage stage) {
     switch (stage) {
         case promotions:
             return generate_promotions(board, moves);

@@ -93,14 +93,14 @@ void test_ChessBoard_to_FEN(void) {
 
 // Utility function to compare move lists
 // O(n^2) but n is small, also I'm lazy
-int compare_move_lists(U64 *expected, U64 *actual, int n) {
+int compare_move_lists(u64 *expected, u64 *actual, int n) {
     int i, j, found;
     for (i = 0; i < n; i++) {
         found = 0;
 
         for (j = 0; j < n; j++) {
-            U64 exp_trunc = expected[i] & 0xfff;  // Truncate to 12 bits
-            U64 act_trunc = actual[j] & 0xfff;    // Truncate to 12 bits
+            u64 exp_trunc = expected[i] & 0xfff;  // Truncate to 12 bits
+            u64 act_trunc = actual[j] & 0xfff;    // Truncate to 12 bits
             if (exp_trunc == act_trunc) {
                 found = 1;
                 break;
@@ -115,8 +115,8 @@ int compare_move_lists(U64 *expected, U64 *actual, int n) {
 
 void test_extract_pawn_moves(void) {
     ChessBoard board;
-    U64 pawn_moves;
-    U64 moves[256] = {0};
+    u64 pawn_moves;
+    u64 moves[256] = {0};
     int move_p = 0;
 
     // Test 1: White to move, pawns at the initial position
@@ -128,7 +128,7 @@ void test_extract_pawn_moves(void) {
         extract_pawn_moves(&board, moves, move_p, pawn_moves, SINGLE_PUSH);
     char *expected_uci_1[] = {"a2a3", "b2b3", "c2c3", "d2d3",
                               "e2e3", "f2f3", "g2g3", "h2h3"};
-    U64 expected_moves_1[8];
+    u64 expected_moves_1[8];
     for (int i = 0; i < 8; i++) {
         expected_moves_1[i] = move_from_uci(&board, expected_uci_1[i]);
     }
@@ -147,7 +147,7 @@ void test_extract_pawn_moves(void) {
         extract_pawn_moves(&board, moves, move_p, pawn_moves, SINGLE_PUSH);
     char *expected_uci_2[] = {"a7a6", "b7b6", "c7c6", "d7d6",
                               "e7e6", "f7f6", "g7g6", "h7h6"};
-    U64 expected_moves_2[8];
+    u64 expected_moves_2[8];
     for (int i = 0; i < 8; i++) {
         expected_moves_2[i] = move_from_uci(&board, expected_uci_2[i]);
     }
@@ -164,7 +164,7 @@ void test_extract_pawn_moves(void) {
     move_p +=
         extract_pawn_moves(&board, moves, move_p, pawn_moves, SINGLE_PUSH);
     char *expected_uci_3[] = {"c5c6", "f6f7"};
-    U64 expected_moves_3[2];
+    u64 expected_moves_3[2];
     for (int i = 0; i < 2; i++) {
         expected_moves_3[i] = move_from_uci(&board, expected_uci_3[i]);
     }
@@ -182,7 +182,7 @@ void test_extract_pawn_moves(void) {
     move_p +=
         extract_pawn_moves(&board, moves, move_p, pawn_moves, SINGLE_PUSH);
     char *expected_uci_4[] = {"d4d3", "b4b3"};
-    U64 expected_moves_4[2];
+    u64 expected_moves_4[2];
     for (int i = 0; i < 2; i++) {
         expected_moves_4[i] = move_from_uci(&board, expected_uci_4[i]);
     }
@@ -195,7 +195,7 @@ void test_extract_pawn_moves(void) {
 }
 
 void test_gen_occupancy_rook(void) {
-    U64 expected;
+    u64 expected;
 
     // Test 1: 12 bits on
     expected = make_bitboard(
@@ -232,7 +232,7 @@ void test_gen_occupancy_rook(void) {
 
 void test_manual_gen_rook_moves(void) {
     // Test 1: Rook on an empty board
-    U64 bb = make_bitboard(
+    u64 bb = make_bitboard(
         "00000000"
         "00000000"
         "00000000"
@@ -241,7 +241,7 @@ void test_manual_gen_rook_moves(void) {
         "00000000"
         "00000000"
         "00000000");
-    U64 expected = make_bitboard(
+    u64 expected = make_bitboard(
         "00001000"
         "00001000"
         "00001000"
@@ -250,7 +250,7 @@ void test_manual_gen_rook_moves(void) {
         "00001000"
         "00001000"
         "00001000");
-    U64 result = manual_gen_rook_moves(bb, 27);
+    u64 result = manual_gen_rook_moves(bb, 27);
     if (result != expected) {
         printf("Test 1 failed.\n");
         return;
@@ -285,7 +285,7 @@ void test_manual_gen_rook_moves(void) {
 }
 
 void test_gen_occupancy_bishop(void) {
-    U64 expected;
+    u64 expected;
 
     // Test 1
     expected = make_bitboard(
@@ -337,7 +337,7 @@ void test_gen_occupancy_bishop(void) {
 }
 
 void test_manual_gen_bishop_moves(void) {
-    U64 bb, expected, result;
+    u64 bb, expected, result;
 
     // Test 1
     bb = make_bitboard(
@@ -395,7 +395,7 @@ void test_manual_gen_bishop_moves(void) {
 void test_init_magic_rook(void) {
     // Test 1: Validate that the magic table produces the correct moves
     // for a rook on square 27 and square 28 for specific occupancy boards.
-    U64 occupancy1 = make_bitboard(
+    u64 occupancy1 = make_bitboard(
         "00000000"
         "00000000"
         "00000000"
@@ -404,7 +404,7 @@ void test_init_magic_rook(void) {
         "00000000"
         "00000000"
         "00000000");
-    U64 expected1 = make_bitboard(
+    u64 expected1 = make_bitboard(
         "00001000"
         "00001000"
         "00001000"
@@ -415,13 +415,13 @@ void test_init_magic_rook(void) {
         "00001000");
     int sq = 27;
     int ind1 = (occupancy1 * lookup.rook_magic[sq]) >> (64 - 12);
-    U64 magic_moves1 = lookup.rook_move[4096 * sq + ind1];
+    u64 magic_moves1 = lookup.rook_move[4096 * sq + ind1];
     if (magic_moves1 != expected1) {
         printf("Test 1 failed for square 27.\n");
         return;
     }
 
-    U64 occupancy2 = make_bitboard(
+    u64 occupancy2 = make_bitboard(
         "00000000"
         "00000000"
         "00000000"
@@ -430,7 +430,7 @@ void test_init_magic_rook(void) {
         "00000000"
         "00000000"
         "00000000");
-    U64 expected2 = make_bitboard(
+    u64 expected2 = make_bitboard(
         "00000000"
         "00000000"
         "00000000"
@@ -440,7 +440,7 @@ void test_init_magic_rook(void) {
         "00010000"
         "00010000");
     int ind2 = (occupancy2 * lookup.rook_magic[28]) >> (64 - 12);
-    U64 magic_moves2 = lookup.rook_move[4096 * 28 + ind2];
+    u64 magic_moves2 = lookup.rook_move[4096 * 28 + ind2];
     if (magic_moves2 != expected2) {
         printf("Test 1 failed for square 28.\n");
         return;
@@ -450,7 +450,7 @@ void test_init_magic_rook(void) {
 }
 
 void test_init_magic_bishop(void) {
-    U64 occupancy, expected, magic_moves;
+    u64 occupancy, expected, magic_moves;
     int sq, ind;
 
     // Test 1
@@ -512,7 +512,7 @@ void test_init_magic_bishop(void) {
 
 void test_extract_magic_moves_rook(void) {
     ChessBoard board;
-    U64 moves[256] = {0};
+    u64 moves[256] = {0};
     int move_p = 0;
 
     
@@ -527,7 +527,7 @@ void test_extract_magic_moves_rook(void) {
     char *expected_uci_1[] = {"c6c5", "c6d6", "c7a7", "c7b7",
                               "c7d7", "c7e7", "c7c8"};
     const size_t len = sizeof(expected_uci_1) / sizeof(expected_uci_1[0]);
-    U64 expected_moves_1[len];
+    u64 expected_moves_1[len];
     for (size_t i = 0; i < len; i++) {
         expected_moves_1[i] = move_from_uci(&board, expected_uci_1[i]);
     }
@@ -613,7 +613,7 @@ void test_extract_magic_moves_rook(void) {
 
 void test_extract_magic_moves_bishop(void) {
     ChessBoard board;
-    U64 moves[256] = {0};
+    u64 moves[256] = {0};
     int move_p = 0;
 
     
@@ -690,7 +690,7 @@ void test_extract_magic_moves_bishop(void) {
 
 void test_extract_queen_moves(void) {
     ChessBoard board;
-    U64 moves[256] = {0};
+    u64 moves[256] = {0};
     int move_p = 0;
 
     
@@ -768,7 +768,7 @@ void test_extract_queen_moves(void) {
 
 void test_extract_king_moves(void) {
     ChessBoard board;
-    U64 moves[256] = {0};
+    u64 moves[256] = {0};
     int move_p = 0;
 
     // Test 1
@@ -844,7 +844,7 @@ void test_extract_king_moves(void) {
 
 void test_extract_knight_moves(void) {
     ChessBoard board;
-    U64 moves[256] = {0};
+    u64 moves[256] = {0};
     int move_p = 0;
 
     // Test 1
@@ -919,8 +919,8 @@ void test_extract_knight_moves(void) {
 
 void test_pawn_double_push(void) {
     ChessBoard board;
-    U64 moves[256] = {0};
-    U64 move_bb = 0;
+    u64 moves[256] = {0};
+    u64 move_bb = 0;
     int move_p = 0;
 
     // Test 1
@@ -997,8 +997,8 @@ void test_pawn_double_push(void) {
 
 void test_pawn_capture(void) {
     ChessBoard board;
-    U64 moves[256] = {0};
-    U64 move_bb = 0;
+    u64 moves[256] = {0};
+    u64 move_bb = 0;
     int move_p = 0;
 
     // Test 1
@@ -1082,8 +1082,8 @@ void test_pawn_capture(void) {
 
 void test_pawn_promote(void) {
     ChessBoard board;
-    U64 moves[256] = {0};
-    U64 move_bb = 0;
+    u64 moves[256] = {0};
+    u64 move_bb = 0;
     int move_p = 0;
 
     // Test 1
@@ -1166,8 +1166,8 @@ void test_pawn_promote(void) {
 
 void test_pawn_promote_capture(void) {
     ChessBoard board;
-    U64 moves[256] = {0};
-    U64 move_bb = 0;
+    u64 moves[256] = {0};
+    u64 move_bb = 0;
     int move_p = 0;
 
     // Test 1
@@ -1256,8 +1256,8 @@ void test_pawn_promote_capture(void) {
 
 void test_pawn_ep(void) {
     ChessBoard board;
-    U64 moves[256] = {0};
-    U64 move_bb = 0;
+    u64 moves[256] = {0};
+    u64 move_bb = 0;
     int move_p = 0;
 
     // Test 1
@@ -1376,9 +1376,9 @@ int run_single_test(char *fen, char expected_uci[][6],
     ChessBoard board;
     ChessBoard_from_FEN(&board, fen);
 
-    U64 attacked = attackers(&board, !board.side);
+    u64 attacked = attackers(&board, !board.side);
 
-    U64 moves[256] = {0};
+    u64 moves[256] = {0};
     int move_p = 0;
 
     char actual_uci[256][6];
@@ -1467,7 +1467,7 @@ void test_is_legal(void) {
 
 void fuzz_generate_moves(void) {
     ChessBoard board;
-    U64 attacked;
+    u64 attacked;
 
     // open file fens.txt
     FILE *fptr;
@@ -1481,7 +1481,7 @@ void fuzz_generate_moves(void) {
     while (fgets(fen, 99, fptr) != NULL) {
         fen[strcspn(fen, "\n")] = '\0';
 
-        U64 moves[256] = {0};
+        u64 moves[256] = {0};
         char ascii_moves[256][6] = {0};
         int num_moves = 0;
 
@@ -1512,9 +1512,9 @@ void fuzz_generate_moves(void) {
 
 void test_legal_move(void) {
     ChessBoard board;
-    U64 attacked;
+    u64 attacked;
 
-	U64 moves[256] = {0};
+	u64 moves[256] = {0};
 	char ascii_moves[256][6] = {0};
 	int ascii_move_p = 0;
 	int num_moves = 0;
@@ -1549,7 +1549,7 @@ void fuzz_legal_moves(void) {
     
 
     ChessBoard board;
-    U64 attacked;
+    u64 attacked;
 
     // open file fens.txt
     FILE *fptr;
@@ -1563,7 +1563,7 @@ void fuzz_legal_moves(void) {
     while (fgets(fen, 99, fptr) != NULL) {
         fen[strcspn(fen, "\n")] = '\0';
 
-        U64 moves[256] = {0};
+        u64 moves[256] = {0};
         char ascii_moves[256][6] = {0};
 		int ascii_move_p = 0;
         int num_moves = 0;
@@ -1597,7 +1597,7 @@ void fuzz_legal_moves(void) {
 
 // Debugging with printf
 void debug_gen_occupancy_rook(void) {
-    U64 *occupancy_mask = lookup.rook_mask;
+    u64 *occupancy_mask = lookup.rook_mask;
 
     for (int i = 0; i < 64; i++) {
         printf("Bitboard for Square %d:\n", i);
@@ -1607,7 +1607,7 @@ void debug_gen_occupancy_rook(void) {
 }
 
 void debug_find_magic_rook(void) {
-    U64 magic;
+    u64 magic;
     int sq;
 
     for (sq = 0; sq < 64; sq++) {
