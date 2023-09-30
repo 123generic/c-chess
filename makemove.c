@@ -2,6 +2,7 @@
 #include "common.h"
 #include "movegen.h"
 #include "lookup.h"
+#include "eval.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -43,8 +44,16 @@ void update_castling_rights(ChessBoard *board, u64 move) {
     }
 }
 
-#define ON(a, b, sq) (board.bitboards[(a) + (b)] |= (1ULL << (sq))); (board.hash ^= zobrist.piece[b][a / 2][sq])
-#define OFF(a, b, sq) (board.bitboards[(a) + (b)] &= ~(1ULL << (sq))); (board.hash ^= zobrist.piece[b][a / 2][sq])
+#define ON(a, b, sq) (board.bitboards[(a) + (b)] |= (1ULL << (sq))); \
+					 (board.hash ^= zobrist.piece[b][a / 2][sq]); \
+					 (board.mg[b] += mg_table[b][a / 2][sq]); \
+					 (board.eg[b] += eg_table[b][a / 2][sq]); \
+					 (board.game_phase += gamephase_inc[a / 2])
+#define OFF(a, b, sq) (board.bitboards[(a) + (b)] &= ~(1ULL << (sq))); \
+					  (board.hash ^= zobrist.piece[b][a / 2][sq]); \
+					  (board.mg[b] -= mg_table[b][a / 2][sq]); \
+					  (board.eg[b] -= eg_table[b][a / 2][sq]); \
+					  (board.game_phase -= gamephase_inc[a / 2])
 
 #define ON_NO_HASH(piece, side, sq) (board.bitboards[(piece) + (side)] |= (1ULL << (sq)))
 #define OFF_NO_HASH(piece, side, sq) (board.bitboards[(piece) + (side)] &= ~(1ULL << (sq)))

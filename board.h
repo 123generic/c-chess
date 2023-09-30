@@ -41,6 +41,11 @@ typedef struct {
 
 	// Zobrist hash
 	u64 hash;
+
+	// Evaluation
+	int mg[2];
+	int eg[2];
+	int game_phase;
 } ChessBoard;
 
 void init_ChessBoard(ChessBoard *board);

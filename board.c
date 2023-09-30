@@ -9,6 +9,7 @@
 #include "movegen.h"
 #include "rng.h"
 #include "hash_table.h"
+#include "eval.h"
 
 const int all_pieces = 12;
 
@@ -228,6 +229,8 @@ void ChessBoard_from_FEN(ChessBoard *board, char *fen) {
     }
 
 	board->hash = manual_compute_hash(board);
+
+	manual_score_gen(board);
 }
 
 void _ChessBoard_str_helper(char *str, u64 bb, char piece) {
@@ -360,4 +363,5 @@ void global_init(void) {
 	init_zobrist();
 	init_LookupTable();
 	init_hash_table();
+	init_tables();
 }

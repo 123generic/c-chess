@@ -5,7 +5,7 @@
 hash_entry_t hash_table[HASH_TABLE_SIZE];
 
 void init_hash_table(void) {
-	memset(hash_table, 0, HASH_TABLE_SIZE);
+	memset(hash_table, 0, sizeof(hash_table));
 }
 
 // helpers
