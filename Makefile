@@ -15,15 +15,24 @@ PROF_FLAGS = -g -pg
 CHESS_SRC = board.c lookup.c makemove.c movegen.c rng.c hash_table.c eval.c
 TEST_SRC = test.c
 PERFT_SRC = perft.c
+SEARCH_SRC = search.c
 
 # Trash
 TRASH = chess test perft_prof perft_test perft *.dSYM __pycache__ gmon.out
 
-all: chess
+all:
 	$(CC) $(CFASTFLAGS) -o chess $(CHESS_SRC)
 	./chess
 
-test: test
+search:
+	$(CC) $(CFASTFLAGS) -o search $(SEARCH_SRC) $(CHESS_SRC)
+	./search
+
+search_debug:
+	$(CC) $(CFLAGS) -o search_debug $(SEARCH_SRC) $(CHESS_SRC)
+	./search_debug
+
+test:
 	$(CC) $(CFLAGS) -o test $(TEST_SRC) $(CHESS_SRC)
 	./test
 

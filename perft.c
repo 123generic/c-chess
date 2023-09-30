@@ -78,8 +78,9 @@ u64 _test_hash_table_helper(ChessBoard board, int depth) {
 
 	MoveGenStage stage[] = {promotions, captures, castling, quiets};
 	int len = sizeof(stage) / sizeof(stage[0]);
+	u64 attack_mask = attackers(&board, !board.side);
 	for (int i = 0; i < len; i++) {
-		num_moves = generate_moves(&board, moves, attackers(&board, !board.side), stage[i]);
+		num_moves = generate_moves(&board, moves, attack_mask, stage[i]);
 
 		for (int move_p = 0; move_p < num_moves; move_p++) {
 			ChessBoard new_board = make_move(board, moves[move_p]);
@@ -169,7 +170,7 @@ int main(void) {
 		// u64 nodes = perft(board, depth);
 		hash_hits = 0;
 		hash_stores = 0;
-		u64 nodes = _test_incremental_eval(board, depth);
+		u64 nodes = _test_hash_table_helper(board, depth);
 		printf("Depth %d: %llu, Hits: %llu, Stores: %llu\n", depth, nodes, hash_hits, hash_stores);
 	}
 

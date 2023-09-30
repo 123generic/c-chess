@@ -241,6 +241,16 @@ void _ChessBoard_str_helper(char *str, u64 bb, char piece) {
     }
 }
 
+void ChessBoard_print(ChessBoard *board) {
+	char str[64 + 1];
+	ChessBoard_str(board, str);
+	for (int i = 0; i < 64; i++) {
+		putc(str[i], stdout);
+		if (i % 8 == 7)
+			putc('\n', stdout);
+	}
+}
+
 // Caller's responsibility to allocate 64 + 1 bytes in str
 void ChessBoard_str(ChessBoard *board, char *str) {
     // setup empty board

@@ -7,6 +7,31 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+// utilities
+int from(u64 move) {
+	return move & 0x3f;
+}
+
+int to(u64 move) {
+	return move >> 6 & 0x3f;
+}
+
+int piece(u64 move) {
+	return move >> 12 & 0xf;
+}
+
+int captured(u64 move) {
+	return move >> 16 & 0xf;
+}
+
+int move_type(u64 move) {
+	return move >> 20 & 0xf;
+}
+
+int promote_type(u64 move) {
+	return move >> 24 & 0xf;
+}
+
 void update_castling_rights(ChessBoard *board, u64 move) {
     int from = move & 0x3f;
     int to = (move >> 6) & 0x3f;

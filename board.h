@@ -53,6 +53,7 @@ void ChessBoard_from_FEN(ChessBoard *board, char *fen);
 void ChessBoard_str(ChessBoard *board, char *str);
 void ChessBoard_to_FEN(ChessBoard *board, char *str);
 Piece ChessBoard_piece_at(ChessBoard *board, int ind);
+void ChessBoard_print(ChessBoard *board);
 
 // Zobrist
 typedef struct {
