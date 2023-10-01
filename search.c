@@ -9,13 +9,12 @@
 #include <stdio.h>
 
 const i16 INF = 20000;
-const i16 out_of_time = INF - 1;
+const i16 MATE = 30000;
+const i16 out_of_time = INF + 100;
 const u64 max_nodes = 100000000;
 
 u64 nodes = 0, hash_moves = 0, hash_move_cut = 0;
 i16 alphabeta(ChessBoard board, u64 attack_mask, i16 alpha, i16 beta, u16 depth, u16 ply, u64 *best_move) {
-	depth = depth < 0 ? 0 : depth;
-
 	// Time management
 	nodes++;
 	if (nodes > max_nodes) {
@@ -28,6 +27,22 @@ i16 alphabeta(ChessBoard board, u64 attack_mask, i16 alpha, i16 beta, u16 depth,
 	}
 
 	i16 old_alpha = alpha;
+
+	// Null Move Pruning
+	if (!zugzwang(&board, attack_mask)) {
+		ChessBoard new_board = null_move(board);
+		u64 new_attack_mask = attackers(&new_board, !new_board.side);
+		u64 _move;
+		u16 new_depth = depth < 3 ? 0 : depth - 3;
+		i16 score = -alphabeta(new_board, new_attack_mask, -beta, -beta + 1, new_depth, ply + 1, &_move);
+		if (score == out_of_time) {
+			return -out_of_time;
+		}
+		if (score >= beta) {
+			store(board.hash, lower, beta, depth, 0);
+			return beta;
+		}
+	}
 
 	// Transposition table lookup
 	u64 entry = 0, hash_move = 0;
@@ -88,7 +103,7 @@ i16 alphabeta(ChessBoard board, u64 attack_mask, i16 alpha, i16 beta, u16 depth,
 	MoveGenStage stage[] = {promotions, captures, castling, quiets};
 	int len = sizeof(stage) / sizeof(stage[0]);
 
-	u64 moves[256], losing_moves[256];
+	u64 moves[256]; //, losing_moves[256];
 	for (int i = 0; i < len; i++) {
 		int num_moves = generate_moves(&board, moves, attack_mask, stage[i]);
 
@@ -134,8 +149,8 @@ i16 alphabeta(ChessBoard board, u64 attack_mask, i16 alpha, i16 beta, u16 depth,
 	// Stalemate and checkmate detection
 	if (legal_moves == 0) {
 		if (attack_mask & board.bitboards[board.side + king]) {
-			store(board.hash, exact, -INF, depth, 0);
-			return -INF + ply;
+			store(board.hash, exact, -MATE + ply, depth, 0);
+			return -MATE + ply;
 		}
 
 		store(board.hash, exact, 0, depth, 0);
@@ -165,7 +180,6 @@ i16 quiescence(ChessBoard board, i16 alpha, i16 beta, u16 ply) {
 
 	alpha = stand_pat > alpha ? stand_pat : alpha;
 	i16 best_score = -INF;
-	u64 best_move = 0;
 	u64 moves[256];
 	u64 attack_mask = attackers(&board, !board.side);
 	int num_moves = generate_moves(&board, moves, attack_mask, captures);
@@ -177,11 +191,9 @@ i16 quiescence(ChessBoard board, i16 alpha, i16 beta, u16 ply) {
 				return -out_of_time;
 			if (score >= beta)
 				return beta;
-			alpha = score > alpha ? score : alpha;
-			if (score > best_score) {
+			if (score > best_score)
 				best_score = score;
-				best_move = moves[move_p];
-			}
+			alpha = score > alpha ? score : alpha;
 		}
 	}
 

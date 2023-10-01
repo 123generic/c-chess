@@ -1,5 +1,6 @@
 #include "board.h"
 #include "common.h"
+#include "makemove.h"
 #include "movegen.h"
 #include "lookup.h"
 #include "eval.h"
@@ -189,6 +190,26 @@ ChessBoard make_move(ChessBoard board, u64 move) {
     // Side
     board.side = !board.side;
 	board.hash ^= zobrist.side;
+
+	return board;
+}
+
+int zugzwang(ChessBoard *board, u64 attack_mask) {
+	if (board->bitboards[board->side + king] & attack_mask)
+		return 1;
+
+	u64 pieces = board->bitboards[all_pieces] & 
+		~(board->bitboards[board->side + pawn] | board->bitboards[board->side + king]);
+	return pieces == 0;
+}
+
+ChessBoard null_move(ChessBoard board) {
+	board.side = !board.side;
+	board.hash ^= zobrist.side;
+
+	// reset ep
+	board.hash ^= board.ep != -1 ? zobrist.ep[board.ep] : 0;
+	board.ep = -1;
 
 	return board;
 }
