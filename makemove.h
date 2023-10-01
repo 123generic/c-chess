@@ -5,6 +5,12 @@
 
 ChessBoard make_move(ChessBoard board, u64 move);
 
+// Move selection
+u64 best_promotion(ChessBoard *board, u64 *moves, int num_moves);
+u64 best_capture(ChessBoard *board, u64 *moves, int num_moves);
+u64 best_quiet(ChessBoard *board, u64 *moves, int num_moves);
+
+
 // Move representation
 // moves are packed into a u64 (LSB -> MSB)
 // 0-5: from square

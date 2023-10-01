@@ -223,5 +223,6 @@ int eval(ChessBoard *board) {
     int egPhase = 24 - mgPhase;
     
 	int score = (mgScore * mgPhase + egScore * egPhase) / 24;
+	score = score < -INF ? -INF : (score > INF ? INF : score);
 	return score;
 }

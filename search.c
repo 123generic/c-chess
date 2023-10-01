@@ -1,3 +1,5 @@
+#include "search.h"
+
 #include "board.h"
 #include "eval.h"
 #include "movegen.h"
@@ -10,8 +12,10 @@ const i16 INF = 20000;
 const i16 out_of_time = INF - 1;
 const u64 max_nodes = 100000000;
 
-u64 nodes = 0, exact_hits = 0, lower_hits = 0, higher_hits = 0, beta_raise = 0, alpha_lower = 0, hash_moves = 0, hash_move_cut = 0;
-i16 alphabeta(ChessBoard board, i16 alpha, i16 beta, u16 depth, u64 *best_move) {
+u64 nodes = 0, hash_moves = 0, hash_move_cut = 0;
+i16 alphabeta(ChessBoard board, u64 attack_mask, i16 alpha, i16 beta, u16 depth, u16 ply, u64 *best_move) {
+	depth = depth < 0 ? 0 : depth;
+
 	// Time management
 	nodes++;
 	if (nodes > max_nodes) {
@@ -20,7 +24,7 @@ i16 alphabeta(ChessBoard board, i16 alpha, i16 beta, u16 depth, u64 *best_move) 
 
 	// Recursive base case
 	if (depth == 0) {
-		return eval(&board);
+		return quiescence(board, alpha, beta, ply);
 	}
 
 	i16 old_alpha = alpha;
@@ -33,25 +37,20 @@ i16 alphabeta(ChessBoard board, i16 alpha, i16 beta, u16 depth, u64 *best_move) 
 		hash_move = flag != higher ? hf_move(entry) : 0;
 
 		if (flag == exact) {
-			exact_hits++;
 			*best_move = hash_move;
 			return score;
 		} else if (flag == lower) {
-			lower_hits++;
 			alpha = score > alpha ? score : alpha;
 		} else if (flag == higher) {
-			higher_hits++;
 			beta = score < beta ? score : beta;
 		}
 		
 		// beta cutoff
 		if (alpha > beta && flag == lower) {
-			beta_raise++;
 			store(board.hash, lower, alpha, depth, hash_move);
 			return alpha;
 		// raise alpha
 		} else if (alpha > beta) {
-			alpha_lower++;
 			store(board.hash, higher, beta, depth, hash_move);
 			return beta;
 		}
@@ -69,7 +68,7 @@ i16 alphabeta(ChessBoard board, i16 alpha, i16 beta, u16 depth, u64 *best_move) 
 		if (is_legal(&new_board, attackers(&new_board, new_board.side), !new_board.side)) {
 			legal_moves++;
 			u64 _move;
-			i16 score = -alphabeta(new_board, -beta, -alpha, depth - 1, &_move);
+			i16 score = -alphabeta(new_board, attackers(&new_board, !new_board.side), -beta, -alpha, depth - 1, ply + 1, &_move);
 			if (score == out_of_time) {
 				return -out_of_time;
 			}
@@ -89,8 +88,7 @@ i16 alphabeta(ChessBoard board, i16 alpha, i16 beta, u16 depth, u64 *best_move) 
 	MoveGenStage stage[] = {promotions, captures, castling, quiets};
 	int len = sizeof(stage) / sizeof(stage[0]);
 
-	u64 moves[256];
-	u64 attack_mask = attackers(&board, !board.side);
+	u64 moves[256], losing_moves[256];
 	for (int i = 0; i < len; i++) {
 		int num_moves = generate_moves(&board, moves, attack_mask, stage[i]);
 
@@ -99,9 +97,16 @@ i16 alphabeta(ChessBoard board, i16 alpha, i16 beta, u16 depth, u64 *best_move) 
 			if (is_legal(&new_board, attackers(&new_board, new_board.side), !new_board.side)) {
 				legal_moves++;
 
+				u64 new_attack_mask = attackers(&new_board, !new_board.side);
+				i16 R = 0;
+
+				// check extension
+				if (new_attack_mask & new_board.bitboards[new_board.side + king])
+					R++;
+
 				// recurse
 				u64 _move;
-				i16 score = -alphabeta(new_board, -beta, -alpha, depth - 1, &_move);
+				i16 score = -alphabeta(new_board, new_attack_mask, -beta, -alpha, depth - 1 + R, ply + 1, &_move);
 				
 				// time management
 				if (score == out_of_time) {
@@ -130,7 +135,7 @@ i16 alphabeta(ChessBoard board, i16 alpha, i16 beta, u16 depth, u64 *best_move) 
 	if (legal_moves == 0) {
 		if (attack_mask & board.bitboards[board.side + king]) {
 			store(board.hash, exact, -INF, depth, 0);
-			return -INF;
+			return -INF + ply;
 		}
 
 		store(board.hash, exact, 0, depth, 0);
@@ -146,13 +151,51 @@ i16 alphabeta(ChessBoard board, i16 alpha, i16 beta, u16 depth, u64 *best_move) 
 	return best_score;
 }
 
+u64 qnodes = 0;
+i16 quiescence(ChessBoard board, i16 alpha, i16 beta, u16 ply) {
+	qnodes++;
+	nodes++;
+
+	if (nodes > max_nodes)
+		return -out_of_time;
+
+	i16 stand_pat = eval(&board);
+	if (stand_pat >= beta)
+		return beta;
+
+	alpha = stand_pat > alpha ? stand_pat : alpha;
+	i16 best_score = -INF;
+	u64 best_move = 0;
+	u64 moves[256];
+	u64 attack_mask = attackers(&board, !board.side);
+	int num_moves = generate_moves(&board, moves, attack_mask, captures);
+	for (int move_p = 0; move_p < num_moves; move_p++) {
+		ChessBoard new_board = make_move(board, moves[move_p]);
+		if (is_legal(&new_board, attackers(&new_board, new_board.side), !new_board.side)) {
+			i16 score = -quiescence(new_board, -beta, -alpha, ply + 1);
+			if (score == out_of_time)
+				return -out_of_time;
+			if (score >= beta)
+				return beta;
+			alpha = score > alpha ? score : alpha;
+			if (score > best_score) {
+				best_score = score;
+				best_move = moves[move_p];
+			}
+		}
+	}
+
+	return best_score;
+}
+
 i16 iterative_deepening(ChessBoard board) {
 	nodes = 0;  // vital, used to cutoff for time
 	u64 best_move;
 	i16 best_score = -INF;
 	for (int depth = 1; /* true */; depth++) {
-		nodes = 0, exact_hits = 0, lower_hits = 0, higher_hits = 0, beta_raise = 0, alpha_lower = 0, hash_moves = 0, hash_move_cut = 0;
-		i16 score = alphabeta(board, -INF, INF, depth, &best_move);
+		nodes = 0, qnodes = 0, hash_moves = 0, hash_move_cut = 0;
+		u64 attack_mask = attackers(&board, !board.side);
+		i16 score = alphabeta(board, attack_mask, -INF, INF, depth, 0, &best_move);
 
 		if (score == -out_of_time) {
 			return best_score;
@@ -165,7 +208,7 @@ i16 iterative_deepening(ChessBoard board) {
 		move_to_uci(best_move, ascii_move);
 
 		printf("depth: %d, nodes: %llu, score: %d, best move: %s\n", depth, nodes, score, ascii_move);
-		printf("exact hits: %llu, lower hits: %llu, higher hits: %llu, beta raise: %llu, alpha lower: %llu, hash moves: %llu, hash move cutoffs: %llu\n\n", exact_hits, lower_hits, higher_hits, beta_raise, alpha_lower, hash_moves, hash_move_cut);
+		printf("qnodes: %llu, hash moves: %llu, hash move cutoffs: %llu\n\n", qnodes, hash_moves, hash_move_cut);
 	}
 }
 

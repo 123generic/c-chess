@@ -198,3 +198,5 @@ ChessBoard make_move(ChessBoard board, u64 move) {
 
 #undef ON_NO_HASH
 #undef OFF_NO_HASH
+
+

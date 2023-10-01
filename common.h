@@ -45,5 +45,6 @@ typedef enum {
 } Piece;
 
 extern const int all_pieces;  // used for bitboard indexing (12, defined in board.c)
+extern const i16 INF;
 
 #endif  // COMMON_H
