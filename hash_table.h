@@ -33,9 +33,9 @@ void store(u64 hash, hash_flag_t flag, i16 score, u16 depth, u64 move);
 void raw_store(u64 hash, u64 entry);
 
 // helpers
-hash_flag_t flag(u64 entry);
-i16 score(u64 entry);
-u16 depth(u64 entry);
-u64 move(u64 entry);
+hash_flag_t hf_flag(u64 entry);
+i16 hf_score(u64 entry);
+u16 hf_depth(u64 entry);
+u64 hf_move(u64 entry);
 
 #endif  // HASH_TABLE_H

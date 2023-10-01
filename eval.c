@@ -223,5 +223,5 @@ int eval(ChessBoard *board) {
     int egPhase = 24 - mgPhase;
     
 	int score = (mgScore * mgPhase + egScore * egPhase) / 24;
-	return board->side == white ? score : -score;
+	return score;
 }

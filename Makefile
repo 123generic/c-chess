@@ -18,7 +18,7 @@ PERFT_SRC = perft.c
 SEARCH_SRC = search.c
 
 # Trash
-TRASH = chess test perft_prof perft_test perft *.dSYM __pycache__ gmon.out
+TRASH = chess test perft_prof perft_test perft search search_debug *.dSYM __pycache__ gmon.out
 
 all:
 	$(CC) $(CFASTFLAGS) -o chess $(CHESS_SRC)
