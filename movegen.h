@@ -55,8 +55,7 @@ int extract_pawn_moves(ChessBoard *board, u64 *moves, int move_p,
 u64 get_moves(ChessBoard *board, int sq, Piece p);
 int extract_moves(ChessBoard *board, u64 *moves, int move_p, u64 move_bb,
                   int sq, Piece p, int quiet);
-int extract_all_moves(ChessBoard *board, u64 *moves,
-                      int move_p, Piece p);
+int extract_all_moves(ChessBoard *board, u64 *moves, int move_p, Piece p);
 
 // Castling
 int generate_castling(ChessBoard *board, u64 *moves, u64 attacked, int move_p);
@@ -69,10 +68,9 @@ int is_legal(ChessBoard *board, u64 attacked, Side side);
 // Move Generation
 int generate_promotions(ChessBoard *board, u64 *moves);
 int generate_normal_moves_pawn(ChessBoard *board, u64 *moves, int quiet);
-int generate_normal_moves(ChessBoard *board, u64 *moves,
-                          int quiet);
-int generate_moves(ChessBoard *board, u64 *moves,
-                   u64 attackers, MoveGenStage stage);
+int generate_normal_moves(ChessBoard *board, u64 *moves, int quiet);
+int generate_moves(ChessBoard *board, u64 *moves, u64 attackers,
+                   MoveGenStage stage);
 
 // Utilities
 u64 move_from_uci(ChessBoard *board, char *uci);

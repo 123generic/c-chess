@@ -280,14 +280,11 @@ void init_LookupTable(void) {
     gen_occupancy_rook();
 
     for (int i = 0; i < 64; i++) {
-        lookup.bishop_magic[i] =
-            find_magic(lookup.bishop_mask, i, bishop);
-        fill_bishop_moves(lookup.bishop_move,
-                          lookup.bishop_mask[i],
+        lookup.bishop_magic[i] = find_magic(lookup.bishop_mask, i, bishop);
+        fill_bishop_moves(lookup.bishop_move, lookup.bishop_mask[i],
                           lookup.bishop_magic[i], i);
 
-        lookup.rook_magic[i] =
-            find_magic(lookup.rook_mask, i, rook);
+        lookup.rook_magic[i] = find_magic(lookup.rook_mask, i, rook);
         fill_rook_moves(lookup.rook_move, lookup.rook_mask[i],
                         lookup.rook_magic[i], i);
     }

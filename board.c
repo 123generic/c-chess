@@ -1,15 +1,15 @@
 #include "board.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 
+#include "eval.h"
+#include "hash_table.h"
 #include "lookup.h"
 #include "movegen.h"
 #include "rng.h"
-#include "hash_table.h"
-#include "eval.h"
 
 const int all_pieces = 12;
 
@@ -47,53 +47,54 @@ u64 make_bitboard(char *str) {
 zobrist_t zobrist;
 
 void init_zobrist(void) {
-       assert(rng_initialized());
+    assert(rng_initialized());
 
-       int i, j, k;
-       for (i = 0; i < 2; i++) {
-               for (j = 0; j < 6; j++) {
-                       for (k = 0; k < 64; k++) {
-                               zobrist.piece[i][j][k] = genrand64_int64();
-                       }
-               }
-       }
-       for (i = 0; i < 2; i++) {
-               for (j = 0; j < 2; j++) {
-                       zobrist.castling[i][j] = genrand64_int64();
-               }
-       }
-       for (i = 0; i < 64; i++) {
-               zobrist.ep[i] = genrand64_int64();
-       }
-       zobrist.side = genrand64_int64();
+    int i, j, k;
+    for (i = 0; i < 2; i++) {
+        for (j = 0; j < 6; j++) {
+            for (k = 0; k < 64; k++) {
+                zobrist.piece[i][j][k] = genrand64_int64();
+            }
+        }
+    }
+    for (i = 0; i < 2; i++) {
+        for (j = 0; j < 2; j++) {
+            zobrist.castling[i][j] = genrand64_int64();
+        }
+    }
+    for (i = 0; i < 64; i++) {
+        zobrist.ep[i] = genrand64_int64();
+    }
+    zobrist.side = genrand64_int64();
 }
 
 u64 manual_compute_hash(ChessBoard *board) {
-       u64 hash = 0;
-       int i;
-       for (i = 0; i < 64; i++) {
-               Piece piece = ChessBoard_piece_at(board, i);
-			   Side side = (1ULL << i) & board->bitboards[all_pieces + white] ? white : black;
-               if (piece != empty) {
-					hash ^= zobrist.piece[side][piece / 2][i];
-               }
-       }
-       if (board->KC[white]) hash ^= zobrist.castling[white][0];
-       if (board->QC[white]) hash ^= zobrist.castling[white][1];
-       if (board->KC[black]) hash ^= zobrist.castling[black][0];
-       if (board->QC[black]) hash ^= zobrist.castling[black][1];
-       if (board->ep != -1) hash ^= zobrist.ep[board->ep];
-       if (board->side == black) hash ^= zobrist.side;
-       return hash;
+    u64 hash = 0;
+    int i;
+    for (i = 0; i < 64; i++) {
+        Piece piece = ChessBoard_piece_at(board, i);
+        Side side =
+            (1ULL << i) & board->bitboards[all_pieces + white] ? white : black;
+        if (piece != empty) {
+            hash ^= zobrist.piece[side][piece / 2][i];
+        }
+    }
+    if (board->KC[white]) hash ^= zobrist.castling[white][0];
+    if (board->QC[white]) hash ^= zobrist.castling[white][1];
+    if (board->KC[black]) hash ^= zobrist.castling[black][0];
+    if (board->QC[black]) hash ^= zobrist.castling[black][1];
+    if (board->ep != -1) hash ^= zobrist.ep[board->ep];
+    if (board->side == black) hash ^= zobrist.side;
+    return hash;
 }
 
 // ChessBoard
 void init_ChessBoard(ChessBoard *board) {
-	// Sets to 0
+    // Sets to 0
     ChessBoard_from_FEN(
         board, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-	
-	assert(board->hash);
+
+    assert(board->hash);
 }
 
 // This function will break if FEN is invalid lol
@@ -228,27 +229,26 @@ void ChessBoard_from_FEN(ChessBoard *board, char *fen) {
         exit(1);
     }
 
-	board->hash = manual_compute_hash(board);
+    board->hash = manual_compute_hash(board);
 
-	manual_score_gen(board);
+    manual_score_gen(board);
 }
 
 void _ChessBoard_str_helper(char *str, u64 bb, char piece) {
-	while (bb) {
-		int ind = __builtin_ctzll(bb);
+    while (bb) {
+        int ind = __builtin_ctzll(bb);
         str[63 - ind] = piece;
         BB_CLEAR(bb, ind);
     }
 }
 
 void ChessBoard_print(ChessBoard *board) {
-	char str[64 + 1];
-	ChessBoard_str(board, str);
-	for (int i = 0; i < 64; i++) {
-		putc(str[i], stdout);
-		if (i % 8 == 7)
-			putc('\n', stdout);
-	}
+    char str[64 + 1];
+    ChessBoard_str(board, str);
+    for (int i = 0; i < 64; i++) {
+        putc(str[i], stdout);
+        if (i % 8 == 7) putc('\n', stdout);
+    }
 }
 
 // Caller's responsibility to allocate 64 + 1 bytes in str
@@ -312,7 +312,8 @@ void ChessBoard_to_FEN(ChessBoard *board, char *str) {
     str[str_p++] = ' ';
 
     // Write castling rights
-    if (board->KC[white] || board->QC[white] || board->KC[black] || board->QC[black]) {
+    if (board->KC[white] || board->QC[white] || board->KC[black] ||
+        board->QC[black]) {
         if (board->KC[white]) str[str_p++] = 'K';
         if (board->QC[white]) str[str_p++] = 'Q';
         if (board->KC[black]) str[str_p++] = 'k';
@@ -369,9 +370,9 @@ Piece ChessBoard_piece_at(ChessBoard *board, int ind) {
 }
 
 void global_init(void) {
-	init_genrand64(0x8c364d19345930e2);
-	init_zobrist();
-	init_LookupTable();
-	init_hash_table();
-	init_tables();
+    init_genrand64(0x8c364d19345930e2);
+    init_zobrist();
+    init_LookupTable();
+    init_hash_table();
+    init_tables();
 }

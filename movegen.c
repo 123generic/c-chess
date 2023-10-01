@@ -71,8 +71,8 @@ u64 get_pawn_moves(ChessBoard *board, PawnMoveType move_type) {
     int wtm;
 
     moved_pawns = 0;
-	wtm = board->side == white;
-	pawns = board->bitboards[board->side + pawn];
+    wtm = board->side == white;
+    pawns = board->bitboards[board->side + pawn];
 
     switch (move_type) {
         case SINGLE_PUSH:
@@ -99,7 +99,7 @@ u64 get_pawn_moves(ChessBoard *board, PawnMoveType move_type) {
             moved_pawns = pawns & ~mask;
             moved_pawns = moved_pawns & ~FILE_1;
             moved_pawns = wtm ? moved_pawns << 9 : moved_pawns >> 7;
-			moved_pawns &= board->bitboards[all_pieces + !board->side];
+            moved_pawns &= board->bitboards[all_pieces + !board->side];
             break;
 
         case CAPTURE_RIGHT:
@@ -171,66 +171,66 @@ int extract_pawn_moves(ChessBoard *board, u64 *moves, int move_p,
 
     switch (move_type) {
         case SINGLE_PUSH:
-			while (pawn_moves) {
-				int ind =  __builtin_ctzll(pawn_moves);
+            while (pawn_moves) {
+                int ind = __builtin_ctzll(pawn_moves);
                 to = ind;
                 from = wtm ? ind - 8 : ind + 8;
-                moves[move_p + num_moves] = from | to << 6 | pawn << 12 |
-                                            empty << 16 | NORMAL << 20;
+                moves[move_p + num_moves] =
+                    from | to << 6 | pawn << 12 | empty << 16 | NORMAL << 20;
                 num_moves++;
                 BB_CLEAR(pawn_moves, ind);
             }
             break;
 
         case DOUBLE_PUSH:
-			while (pawn_moves) {
-				int ind =  __builtin_ctzll(pawn_moves);
+            while (pawn_moves) {
+                int ind = __builtin_ctzll(pawn_moves);
                 to = ind;
                 from = wtm ? ind - 16 : ind + 16;
-                moves[move_p + num_moves] = from | to << 6 | pawn << 12 |
-                                            empty << 16 | NORMAL << 20;
+                moves[move_p + num_moves] =
+                    from | to << 6 | pawn << 12 | empty << 16 | NORMAL << 20;
                 num_moves++;
                 BB_CLEAR(pawn_moves, ind);
             }
             break;
 
         case CAPTURE_LEFT:
-			while (pawn_moves) {
-				int ind =  __builtin_ctzll(pawn_moves);
+            while (pawn_moves) {
+                int ind = __builtin_ctzll(pawn_moves);
                 to = ind;
                 from = wtm ? ind - 9 : ind + 7;
                 captured = ChessBoard_piece_at(board, to);
-                moves[move_p + num_moves] = from | to << 6 | pawn << 12 |
-                                            captured << 16 | NORMAL << 20;
+                moves[move_p + num_moves] =
+                    from | to << 6 | pawn << 12 | captured << 16 | NORMAL << 20;
                 num_moves++;
                 BB_CLEAR(pawn_moves, ind);
             }
             break;
 
         case CAPTURE_RIGHT:
-			while (pawn_moves) {
-				int ind =  __builtin_ctzll(pawn_moves);
+            while (pawn_moves) {
+                int ind = __builtin_ctzll(pawn_moves);
                 to = ind;
                 from = wtm ? ind - 7 : ind + 9;
                 captured = ChessBoard_piece_at(board, to);
-                moves[move_p + num_moves] = from | to << 6 | pawn << 12 |
-                                            captured << 16 | NORMAL << 20;
+                moves[move_p + num_moves] =
+                    from | to << 6 | pawn << 12 | captured << 16 | NORMAL << 20;
                 num_moves++;
                 BB_CLEAR(pawn_moves, ind);
             }
             break;
 
         case PAWN_PROMOTION:
-			while (pawn_moves) {
-				int ind =  __builtin_ctzll(pawn_moves);
+            while (pawn_moves) {
+                int ind = __builtin_ctzll(pawn_moves);
                 to = ind;
                 from = wtm ? ind - 8 : ind + 8;
 
                 int promote[4] = {queen, rook, bishop, knight};
                 for (int i = 0; i < 4; i++) {
-                    moves[move_p + num_moves] =
-                        from | to << 6 | pawn << 12 | empty << 16 |
-                        PROMOTION << 20 | promote[i] << 24;
+                    moves[move_p + num_moves] = from | to << 6 | pawn << 12 |
+                                                empty << 16 | PROMOTION << 20 |
+                                                promote[i] << 24;
                     num_moves++;
                 }
                 BB_CLEAR(pawn_moves, ind);
@@ -238,8 +238,8 @@ int extract_pawn_moves(ChessBoard *board, u64 *moves, int move_p,
             break;
 
         case PROMOTION_CAPTURE_LEFT:
-			while (pawn_moves) {
-				int ind =  __builtin_ctzll(pawn_moves);
+            while (pawn_moves) {
+                int ind = __builtin_ctzll(pawn_moves);
                 to = ind;
                 from = wtm ? ind - 9 : ind + 7;
                 captured = ChessBoard_piece_at(board, to);
@@ -256,8 +256,8 @@ int extract_pawn_moves(ChessBoard *board, u64 *moves, int move_p,
             break;
 
         case PROMOTION_CAPTURE_RIGHT:
-			while (pawn_moves) {
-				int ind =  __builtin_ctzll(pawn_moves);
+            while (pawn_moves) {
+                int ind = __builtin_ctzll(pawn_moves);
                 to = ind;
                 from = wtm ? ind - 7 : ind + 9;
                 captured = ChessBoard_piece_at(board, to);
@@ -273,15 +273,15 @@ int extract_pawn_moves(ChessBoard *board, u64 *moves, int move_p,
             }
             break;
 
-		int ind;
+            int ind;
         case EN_PASSANT_LEFT:
             if (pawn_moves == 0) break;
-			ind = __builtin_ctzll(pawn_moves);
+            ind = __builtin_ctzll(pawn_moves);
             to = ind;
             from = wtm ? ind - 9 : ind + 7;
 
-            moves[move_p + num_moves] = from | to << 6 | pawn << 12 |
-                                        pawn << 16 | EN_PASSANT << 20;
+            moves[move_p + num_moves] =
+                from | to << 6 | pawn << 12 | pawn << 16 | EN_PASSANT << 20;
             num_moves++;
             break;
 
@@ -291,8 +291,8 @@ int extract_pawn_moves(ChessBoard *board, u64 *moves, int move_p,
             to = ind;
             from = wtm ? ind - 7 : ind + 9;
 
-            moves[move_p + num_moves] = from | to << 6 | pawn << 12 |
-                                        pawn << 16 | EN_PASSANT << 20;
+            moves[move_p + num_moves] =
+                from | to << 6 | pawn << 12 | pawn << 16 | EN_PASSANT << 20;
             num_moves++;
             break;
     }
@@ -326,8 +326,8 @@ inline u64 get_attacks(ChessBoard *board, int sq, Piece p) {
             break;
 
         case queen:
-            moves = get_attacks(board, sq, rook) |
-                    get_attacks(board, sq, bishop);
+            moves =
+                get_attacks(board, sq, rook) | get_attacks(board, sq, bishop);
             break;
 
         case knight:
@@ -357,8 +357,8 @@ int extract_moves(ChessBoard *board, u64 *moves, int move_p, u64 move_bb,
     int to, captured;
     int num_moves = 0;
 
-	while (move_bb) {
-		int ind = __builtin_ctzll(move_bb);
+    while (move_bb) {
+        int ind = __builtin_ctzll(move_bb);
         to = ind;
         captured = quiet ? empty : ChessBoard_piece_at(board, ind);
         moves[move_p + num_moves] =
@@ -371,17 +371,16 @@ int extract_moves(ChessBoard *board, u64 *moves, int move_p, u64 move_bb,
 }
 
 // For debugging only
-int extract_all_moves(ChessBoard *board, u64 *moves,
-                      int move_p, Piece p) {
+int extract_all_moves(ChessBoard *board, u64 *moves, int move_p, Piece p) {
     int sq, num_moves;
     u64 bb, move_bb, enemies;
 
     num_moves = 0;
-	bb = board->bitboards[board->side + p];
-	enemies = board->bitboards[all_pieces + !board->side];
+    bb = board->bitboards[board->side + p];
+    enemies = board->bitboards[all_pieces + !board->side];
 
-	while (bb) {
-		sq = __builtin_ctzll(bb);
+    while (bb) {
+        sq = __builtin_ctzll(bb);
         move_bb = get_moves(board, sq, p);
 
         num_moves += extract_moves(board, moves, move_p + num_moves,
@@ -402,7 +401,7 @@ int generate_castling(ChessBoard *board, u64 *moves, u64 attacked, int move_p) {
     u64 castle_mask, check_mask;
 
     if (board->side == white) {
-		sq = __builtin_ctzll(board->bitboards[white + king]);
+        sq = __builtin_ctzll(board->bitboards[white + king]);
 
         if (board->KC[white]) {
             king_to = sq - 2;
@@ -431,7 +430,7 @@ int generate_castling(ChessBoard *board, u64 *moves, u64 attacked, int move_p) {
             }
         }
     } else {
-		sq = __builtin_ctzll(board->bitboards[black + king]);
+        sq = __builtin_ctzll(board->bitboards[black + king]);
 
         if (board->KC[black]) {
             king_to = sq - 2;
@@ -471,7 +470,7 @@ u64 attackers(ChessBoard *board, Side side) {
 
     // Pawns
     u64 moved_pawns;
-	const u64 pawns = board->bitboards[side + pawn];
+    const u64 pawns = board->bitboards[side + pawn];
 
     // left
     moved_pawns = pawns & ~FILE_1;
@@ -501,48 +500,48 @@ u64 attackers(ChessBoard *board, Side side) {
     }
 
     // Other pieces
-	u64 bb;
+    u64 bb;
 
-	// rook
-	bb = board->bitboards[side + rook];
-	while (bb) {
-		int ind = __builtin_ctzll(bb);
-		attack |= get_attacks(board, ind, rook);
+    // rook
+    bb = board->bitboards[side + rook];
+    while (bb) {
+        int ind = __builtin_ctzll(bb);
+        attack |= get_attacks(board, ind, rook);
 
-		BB_CLEAR(bb, ind);
-	}
+        BB_CLEAR(bb, ind);
+    }
 
-	bb = board->bitboards[side + bishop];
-	while (bb) {
-		int ind = __builtin_ctzll(bb);
-		attack |= get_attacks(board, ind, bishop);
+    bb = board->bitboards[side + bishop];
+    while (bb) {
+        int ind = __builtin_ctzll(bb);
+        attack |= get_attacks(board, ind, bishop);
 
-		BB_CLEAR(bb, ind);
-	}
+        BB_CLEAR(bb, ind);
+    }
 
-	bb = board->bitboards[side + queen];
-	while (bb) {
-		int ind = __builtin_ctzll(bb);
-		attack |= get_attacks(board, ind, queen);
+    bb = board->bitboards[side + queen];
+    while (bb) {
+        int ind = __builtin_ctzll(bb);
+        attack |= get_attacks(board, ind, queen);
 
-		BB_CLEAR(bb, ind);
-	}
+        BB_CLEAR(bb, ind);
+    }
 
-	bb = board->bitboards[side + knight];
-	while (bb) {
-		int ind = __builtin_ctzll(bb);
-		attack |= get_attacks(board, ind, knight);
+    bb = board->bitboards[side + knight];
+    while (bb) {
+        int ind = __builtin_ctzll(bb);
+        attack |= get_attacks(board, ind, knight);
 
-		BB_CLEAR(bb, ind);
-	}
+        BB_CLEAR(bb, ind);
+    }
 
-	bb = board->bitboards[side + king];
-	while (bb) {
-		int ind = __builtin_ctzll(bb);
-		attack |= get_attacks(board, ind, king);
+    bb = board->bitboards[side + king];
+    while (bb) {
+        int ind = __builtin_ctzll(bb);
+        attack |= get_attacks(board, ind, king);
 
-		BB_CLEAR(bb, ind);
-	}
+        BB_CLEAR(bb, ind);
+    }
 
     return attack;
 }
@@ -592,8 +591,7 @@ int generate_normal_moves_pawn(ChessBoard *board, u64 *moves, int quiet) {
     return num_moves;
 }
 
-int generate_normal_moves(ChessBoard *board, u64 *moves,
-                          int quiet) {
+int generate_normal_moves(ChessBoard *board, u64 *moves, int quiet) {
     int num_moves = 0;
 
     // Pawns
@@ -607,11 +605,11 @@ int generate_normal_moves(ChessBoard *board, u64 *moves,
     // iterate through piece types
     for (int i = 0; i < len; i++) {
         Piece p = pieces[i];
-		u64 piece_bb = board->bitboards[board->side + p];
+        u64 piece_bb = board->bitboards[board->side + p];
 
         // iterate through piece locations)
         while (piece_bb) {
-			int sq = __builtin_ctzll(piece_bb);
+            int sq = __builtin_ctzll(piece_bb);
             u64 move_bb = get_moves(board, sq, p);
             move_bb &= (quiet ? ~enemies : enemies);  // **masking**
 
@@ -626,8 +624,8 @@ int generate_normal_moves(ChessBoard *board, u64 *moves,
 }
 
 // attackers is squares attacked by !board->side (enemies)
-int generate_moves(ChessBoard *board, u64 *moves,
-                   u64 attackers, MoveGenStage stage) {
+int generate_moves(ChessBoard *board, u64 *moves, u64 attackers,
+                   MoveGenStage stage) {
     switch (stage) {
         case promotions:
             return generate_promotions(board, moves);

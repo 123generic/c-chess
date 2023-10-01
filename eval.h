@@ -11,4 +11,4 @@ void init_tables(void);
 void manual_score_gen(ChessBoard *board);
 int eval(ChessBoard *board);
 
-#endif // EVAL_H
+#endif  // EVAL_H

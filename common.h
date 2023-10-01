@@ -28,14 +28,14 @@ typedef int16_t i16;
 #define FILE_8 0x101010101010101
 
 typedef enum {
-	white = 0,
-	black = 1,
-	all = 2,  // used for bitboard indexing
+    white = 0,
+    black = 1,
+    all = 2,  // used for bitboard indexing
 } Side;
 
 // Piece enum (must fit in nibble)
 typedef enum {
-	empty = 15,
+    empty = 15,
     pawn = 0,
     rook = 2,
     knight = 4,
@@ -44,7 +44,8 @@ typedef enum {
     king = 10,
 } Piece;
 
-extern const int all_pieces;  // used for bitboard indexing (12, defined in board.c)
+extern const int
+    all_pieces;  // used for bitboard indexing (12, defined in board.c)
 extern const i16 INF;
 
 #endif  // COMMON_H

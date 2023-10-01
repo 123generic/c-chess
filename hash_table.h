@@ -13,14 +13,14 @@
 // depth                  : 19-25
 // move                   : 26-64
 typedef enum {
-	lower  = 0,
-	higher = 1,
-	exact  = 2,
+    lower = 0,
+    higher = 1,
+    exact = 2,
 } hash_flag_t;
 
 typedef struct {
-	u64 hash;
-	u64 entry;
+    u64 hash;
+    u64 entry;
 } hash_entry_t;
 
 extern hash_entry_t hash_table[HASH_TABLE_SIZE];

@@ -1,7 +1,7 @@
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 
 #include "board.h"
 #include "common.h"
@@ -515,8 +515,6 @@ void test_extract_magic_moves_rook(void) {
     u64 moves[256] = {0};
     int move_p = 0;
 
-    
-
     // Test 1
     ChessBoard_from_FEN(
         &board,
@@ -616,8 +614,6 @@ void test_extract_magic_moves_bishop(void) {
     u64 moves[256] = {0};
     int move_p = 0;
 
-    
-
     // Test 1
     memset(moves, 0, sizeof(moves));
     move_p = 0;
@@ -692,8 +688,6 @@ void test_extract_queen_moves(void) {
     ChessBoard board;
     u64 moves[256] = {0};
     int move_p = 0;
-
-    
 
     // Test 1
     memset(moves, 0, sizeof(moves));
@@ -1371,8 +1365,7 @@ void test_pawn_ep(void) {
     printf("%s: All tests passed.\n", __func__);
 }
 
-int run_single_test(char *fen, char expected_uci[][6],
-                    int len) {
+int run_single_test(char *fen, char expected_uci[][6], int len) {
     ChessBoard board;
     ChessBoard_from_FEN(&board, fen);
 
@@ -1439,31 +1432,34 @@ void test_gen_castling(void) {
 }
 
 void test_is_legal(void) {
-	ChessBoard board;
+    ChessBoard board;
 
     // Test 1
-    char fen1[] = "2B2k2/pqPPp2p/p1pPr2N/p1P5/1Rb1P2r/1NpP1nbP/p2nQKP1/2R1B3 w - - 0 1";
+    char fen1[] =
+        "2B2k2/pqPPp2p/p1pPr2N/p1P5/1Rb1P2r/1NpP1nbP/p2nQKP1/2R1B3 w - - 0 1";
     ChessBoard_from_FEN(&board, fen1);
     assert(!is_legal(&board, attackers(&board, !board.side), board.side));
 
     // Test 2
-    char fen2[] = "2B2k2/pqPPp2p/p1pPr2N/p1P5/1Rb1P2r/1NpP1n1P/p2nQKPb/2R1B3 w - - 0 1";
+    char fen2[] =
+        "2B2k2/pqPPp2p/p1pPr2N/p1P5/1Rb1P2r/1NpP1n1P/p2nQKPb/2R1B3 w - - 0 1";
     ChessBoard_from_FEN(&board, fen2);
     assert(is_legal(&board, attackers(&board, !board.side), board.side));
 
-	// Test 3
-	char fen3[] = "K4BR1/p1pr4/1Pr1pk1p/PnP2P1p/4N1Pp/PRqp3b/PNBbPp1n/5Q2 b - - 0 1";
-	ChessBoard_from_FEN(&board, fen3);
-	assert(!is_legal(&board, attackers(&board, !board.side), board.side));
+    // Test 3
+    char fen3[] =
+        "K4BR1/p1pr4/1Pr1pk1p/PnP2P1p/4N1Pp/PRqp3b/PNBbPp1n/5Q2 b - - 0 1";
+    ChessBoard_from_FEN(&board, fen3);
+    assert(!is_legal(&board, attackers(&board, !board.side), board.side));
 
-	// Test 4
-	char fen4[] = "K4BR1/p1pr4/1Pr1pk1p/PnP2P1p/5NPp/PRqp3b/PNBbPp1n/5Q2 b - - 0 1";
-	ChessBoard_from_FEN(&board, fen4);
-	assert(is_legal(&board, attackers(&board, !board.side), board.side));
+    // Test 4
+    char fen4[] =
+        "K4BR1/p1pr4/1Pr1pk1p/PnP2P1p/5NPp/PRqp3b/PNBbPp1n/5Q2 b - - 0 1";
+    ChessBoard_from_FEN(&board, fen4);
+    assert(is_legal(&board, attackers(&board, !board.side), board.side));
 
     printf("%s: All tests passed.\n", __func__);
 }
-
 
 void fuzz_generate_moves(void) {
     ChessBoard board;
@@ -1514,40 +1510,40 @@ void test_legal_move(void) {
     ChessBoard board;
     u64 attacked;
 
-	u64 moves[256] = {0};
-	char ascii_moves[256][6] = {0};
-	int ascii_move_p = 0;
-	int num_moves = 0;
+    u64 moves[256] = {0};
+    char ascii_moves[256][6] = {0};
+    int ascii_move_p = 0;
+    int num_moves = 0;
 
-	ChessBoard_from_FEN(&board, "1N3k1r/p6p/1b5n/1QP3p1/1P3pK1/7P/R1r1NBPR/1N3B2 w - - 4 26");
-	attacked = attackers(&board, !board.side);
+    ChessBoard_from_FEN(
+        &board, "1N3k1r/p6p/1b5n/1QP3p1/1P3pK1/7P/R1r1NBPR/1N3B2 w - - 4 26");
+    attacked = attackers(&board, !board.side);
 
-	MoveGenStage stage[] = {promotions, captures, castling, quiets};
-	int len = sizeof(stage) / sizeof(stage[0]);
-	for (int i = 0; i < len; i++) {
-		num_moves = generate_moves(&board, moves, attacked, stage[i]);
+    MoveGenStage stage[] = {promotions, captures, castling, quiets};
+    int len = sizeof(stage) / sizeof(stage[0]);
+    for (int i = 0; i < len; i++) {
+        num_moves = generate_moves(&board, moves, attacked, stage[i]);
 
-		for (int move_p = 0; move_p < num_moves; move_p++) {
-			ChessBoard new_board = make_move(board, moves[move_p]);
-			if (is_legal(&new_board, attackers(&new_board, new_board.side), !new_board.side)) {
-				move_to_uci(moves[move_p], ascii_moves[ascii_move_p++]);
-			}
-		}
-	}
+        for (int move_p = 0; move_p < num_moves; move_p++) {
+            ChessBoard new_board = make_move(board, moves[move_p]);
+            if (is_legal(&new_board, attackers(&new_board, new_board.side),
+                         !new_board.side)) {
+                move_to_uci(moves[move_p], ascii_moves[ascii_move_p++]);
+            }
+        }
+    }
 
-	qsort(ascii_moves, ascii_move_p, sizeof(ascii_moves[0]),
-			(int (*)(const void *, const void *))strcmp);
+    qsort(ascii_moves, ascii_move_p, sizeof(ascii_moves[0]),
+          (int (*)(const void *, const void *))strcmp);
 
-	// printf("%s:", fen);
-	for (int i = 0; i < ascii_move_p; i++) {
-		printf(i == 0 ? "%s" : " %s", ascii_moves[i]);
-	}
-	printf("\n");
+    // printf("%s:", fen);
+    for (int i = 0; i < ascii_move_p; i++) {
+        printf(i == 0 ? "%s" : " %s", ascii_moves[i]);
+    }
+    printf("\n");
 }
 
 void fuzz_legal_moves(void) {
-    
-
     ChessBoard board;
     u64 attacked;
 
@@ -1565,7 +1561,7 @@ void fuzz_legal_moves(void) {
 
         u64 moves[256] = {0};
         char ascii_moves[256][6] = {0};
-		int ascii_move_p = 0;
+        int ascii_move_p = 0;
         int num_moves = 0;
 
         ChessBoard_from_FEN(&board, fen);
@@ -1576,12 +1572,13 @@ void fuzz_legal_moves(void) {
         for (int i = 0; i < len; i++) {
             num_moves = generate_moves(&board, moves, attacked, stage[i]);
 
-			for (int move_p = 0; move_p < num_moves; move_p++) {
-				ChessBoard new_board = make_move(board, moves[move_p]);
-				if (is_legal(&new_board, attackers(&new_board, new_board.side), !new_board.side)) {
-					move_to_uci(moves[move_p], ascii_moves[ascii_move_p++]);
-				}
-			}
+            for (int move_p = 0; move_p < num_moves; move_p++) {
+                ChessBoard new_board = make_move(board, moves[move_p]);
+                if (is_legal(&new_board, attackers(&new_board, new_board.side),
+                             !new_board.side)) {
+                    move_to_uci(moves[move_p], ascii_moves[ascii_move_p++]);
+                }
+            }
         }
 
         qsort(ascii_moves, ascii_move_p, sizeof(ascii_moves[0]),
@@ -1644,7 +1641,7 @@ void unit_test(void) {
     test_pawn_ep();
     test_gen_castling();
 
-	test_is_legal();
+    test_is_legal();
 
     printf("Finished unit tests.\n");
 }
@@ -1658,15 +1655,15 @@ void debug_print(void) {
 }
 
 void fuzz(void) {
-	// fuzz_generate_moves();
-	fuzz_legal_moves();
+    // fuzz_generate_moves();
+    fuzz_legal_moves();
 }
 
 int main(void) {
     global_init();
 
     // debug_print();
-	// fuzz();
+    // fuzz();
     unit_test();
     return 0;
 }
