@@ -22,6 +22,8 @@ int move_type(u64 move) { return move >> 20 & 0xf; }
 
 int promote_type(u64 move) { return move >> 24 & 0xf; }
 
+u16 move_value(u64 move) { return move >> 28 & 0xffff; }
+
 void update_castling_rights(ChessBoard *board, u64 move) {
     int from = move & 0x3f;
     int to = (move >> 6) & 0x3f;
@@ -195,6 +197,12 @@ ChessBoard make_move(ChessBoard board, u64 move) {
     return board;
 }
 
+#undef ON
+#undef OFF
+
+#undef ON_NO_HASH
+#undef OFF_NO_HASH
+
 int zugzwang(ChessBoard *board, u64 attack_mask) {
     if (board->bitboards[board->side + king] & attack_mask) return 1;
 
@@ -215,8 +223,16 @@ ChessBoard null_move(ChessBoard board) {
     return board;
 }
 
-#undef ON
-#undef OFF
+u64 select_move(u64 *moves, int num_moves) {
+	int ind = 0, best_score = -1;
+	for (int i = 0; i < num_moves; i++) {
+		if (move_value(moves[i]) > best_score) {
+			best_score = move_value(moves[i]);
+			ind = i;
+		}
+	}
 
-#undef ON_NO_HASH
-#undef OFF_NO_HASH
+	u64 best = moves[ind];
+	moves[ind] = moves[num_moves - 1];
+	return best_score != -1 ? best : 0;
+}

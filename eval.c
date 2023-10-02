@@ -1,7 +1,8 @@
 #include "board.h"
 #include "common.h"
 
-int value[12] = {1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6};
+const i16 INF = 20000;
+const i16 out_of_time = INF + 100;
 int mg_value[6] = {82, 337, 365, 477, 1025, 0};
 int eg_value[6] = {94, 281, 297, 512, 936, 0};
 

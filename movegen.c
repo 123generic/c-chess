@@ -6,6 +6,7 @@
 #include "board.h"
 #include "common.h"
 #include "lookup.h"
+#include "makemove.h"
 
 // Utilities
 u64 move_from_uci(ChessBoard *board, char *uci) {
@@ -623,16 +624,62 @@ int generate_normal_moves(ChessBoard *board, u64 *moves, int quiet) {
     return num_moves;
 }
 
+void value_promotions(u64 *moves, int num_moves) {
+	int piece_value[6] = {1, 5, 3, 3, 9, 1000};
+	for (int i = 0; i < num_moves; i++) {
+		u64 move = moves[i];
+		Piece promotion = promote_type(move);
+		u16 value = piece_value[promotion / 2];
+		moves[i] = move | (u64)value << 28;
+	}
+}
+
+void value_captures(u64 attack_mask, u64 *moves, int num_moves, int losing) {
+	// values by BLIND: lxh or mxm or (hxl only if l is undefended)
+	int piece_value[6] = {1, 5, 3, 4, 9, 1000};
+	for (int i = 0; i < num_moves; i++) {
+		u64 move = moves[i];
+		u16 value;
+
+		if (piece_value[piece(move) / 2] <= piece_value[captured(move) / 2]) {
+			value = 10 * piece_value[captured(move) / 2] - piece_value[piece(move) / 2];
+		} else if (!(BB_SQUARE(to(move)) & attack_mask)) {
+			value = 10 * piece_value[captured(move) / 2] - piece_value[piece(move) / 2];
+		} else {
+			value = 0;
+		}
+
+		if (losing && value > 0) {
+			value = 0;
+		} else if (losing && value == 0) {
+			value = 1;
+		}
+
+		moves[i] = move | (u64)value << 28;
+	}
+}
+
+
+
 // attackers is squares attacked by !board->side (enemies)
 int generate_moves(ChessBoard *board, u64 *moves, u64 attackers,
                    MoveGenStage stage) {
+	int num_moves;
     switch (stage) {
         case promotions:
-            return generate_promotions(board, moves);
+            num_moves = generate_promotions(board, moves);
+			value_promotions(moves, num_moves);
+			return num_moves;
 
         case captures:
+			num_moves = generate_normal_moves(board, moves, 0);
+			value_captures(attackers, moves, num_moves, 0);
+			return num_moves;
+
         case losing:
-            return generate_normal_moves(board, moves, 0);
+			num_moves = generate_normal_moves(board, moves, 0);
+			value_captures(attackers, moves, num_moves, 1);
+            return num_moves;
 
         case castling:
             return generate_castling(board, moves, attackers, 0);
