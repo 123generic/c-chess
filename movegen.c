@@ -1,5 +1,6 @@
 #include "movegen.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -8,7 +9,6 @@
 #include "lookup.h"
 #include "makemove.h"
 #include "search.h"
-#include <assert.h>
 
 // Utilities
 u64 move_from_uci(ChessBoard *board, char *uci) {
@@ -627,96 +627,108 @@ int generate_normal_moves(ChessBoard *board, u64 *moves, int quiet) {
 }
 
 void value_promotions(u64 *moves, int num_moves) {
-	int piece_value[6] = {1, 5, 3, 3, 9, 1000};
-	for (int i = 0; i < num_moves; i++) {
-		u64 move = moves[i];
-		Piece promotion = promote_type(move);
-		u16 value = piece_value[promotion / 2];
-		moves[i] = move | (u64)value << 28;
-	}
+    int piece_value[6] = {1, 5, 3, 3, 9, 1000};
+    for (int i = 0; i < num_moves; i++) {
+        u64 move = moves[i];
+        Piece promotion = promote_type(move);
+        u16 value = piece_value[promotion / 2];
+        moves[i] = (move & 0xFFFFFFF) | (u64)value << 28;
+    }
 }
 
 void value_captures(u64 attack_mask, u64 *moves, int num_moves, int losing) {
-	// values by BLIND: lxh or mxm or (hxl only if l is undefended)
-	int piece_value[6] = {1, 5, 3, 4, 9, 1000};
-	for (int i = 0; i < num_moves; i++) {
-		u64 move = moves[i];
-		u16 value;
+    // values by BLIND: lxh or mxm or (hxl only if l is undefended)
+    int piece_value[6] = {1, 5, 3, 4, 9, 1000};
+    for (int i = 0; i < num_moves; i++) {
+        u64 move = moves[i];
+        u16 value;
 
-		if (piece_value[piece(move) / 2] <= piece_value[captured(move) / 2]) {
-			value = 10 * piece_value[captured(move) / 2] - piece_value[piece(move) / 2];
-		} else if (!(BB_SQUARE(to(move)) & attack_mask)) {
-			value = 10 * piece_value[captured(move) / 2] - piece_value[piece(move) / 2];
-		} else {
-			value = 0;
-		}
+        if (piece_value[piece(move) / 2] <= piece_value[captured(move) / 2]) {
+            value = 10 * piece_value[captured(move) / 2] -
+                    piece_value[piece(move) / 2];
+        } else if (!(BB_SQUARE(to(move)) & attack_mask)) {
+            value = 10 * piece_value[captured(move) / 2] -
+                    piece_value[piece(move) / 2];
+        } else {
+            value = 0;
+        }
 
-		if (losing && value > 0) {
-			value = 0;
-		} else if (losing && value == 0) {
-			value = 1;
-		}
+        if (losing && value > 0) {
+            value = 0;
+        } else if (losing && value == 0) {
+            value = 1;
+        }
 
-		moves[i] = move | (u64)value << 28;
-	}
+        moves[i] = (move & 0xFFFFFFF) | (u64)value << 28;
+    }
 }
 
-void value_quiets(u64 *moves, int num_moves, KillerTable *killer_table) {
-	u64 move1 = killer_table->move1, move2 = killer_table->move2;
+void value_quiets(ChessBoard *board, u64 *moves, int num_moves, KillerTable *killer_table,
+                  u64 *counter_move, u64 prev_move, int *history_table) {
+    u64 move1 = killer_table->move1, move2 = killer_table->move2;
+    move1 &= 0xFFFFFFF;
+    move2 &= 0xFFFFFFF;
 
-	// all valued as 0 except move 1 -> 2, move 2 -> 1
-	for (int i = 0; i < num_moves; i++) {
-		u64 move = moves[i];
-		if ((move & 0x3FFFFFF) == (move1 & 0x3FFFFFF)) {
-			moves[i] = move | (u64)1 << 28;
-		} else if ((move & 0x3FFFFFF) == (move2 & 0x3FFFFFF)) {
-			moves[i] = move | (u64)2 << 28;
-		} else {
-			moves[i] = move | (u64)0 << 28;
-		}
-	}
+    // all valued as 0 except move 1 -> 2, move 2 -> 1
+    for (int i = 0; i < num_moves; i++) {
+        u64 move = moves[i] & 0xFFFFFFF;
+        if (move == move1) {
+            moves[i] = move | (u64)(history_max + 3) << 28;
+        } else if (move == move2) {
+            moves[i] = move | (u64)(history_max + 2) << 28;
+        } else if (move == counter_move[from(prev_move) * 64 + to(prev_move)]) {
+            moves[i] = move | (u64)(history_max + 1) << 28;
+        } else {
+			int ind = board->side * 64 * 64 + from(move) * 64 + to(move);
+			int value = history_table[ind];
+            moves[i] = move | (u64)value << 28;
+        }
+    }
 }
 
 // attackers is squares attacked by !board->side (enemies)
-int generate_moves(ChessBoard *board, u64 *moves, u64 attackers, MoveGenStage stage) {
-	int num_moves;
+int generate_moves(ChessBoard *board, u64 *moves, u64 attackers,
+                   MoveGenStage stage) {
     switch (stage) {
         case promotions:
             return generate_promotions(board, moves);
 
         case captures:
-			return generate_normal_moves(board, moves, 0);
+            return generate_normal_moves(board, moves, 0);
 
         case losing:
-			return generate_normal_moves(board, moves, 0);
+            return generate_normal_moves(board, moves, 0);
 
         case castling:
             return generate_castling(board, moves, attackers, 0);
 
         case quiets:
-			return generate_normal_moves(board, moves, 1);
+            return generate_normal_moves(board, moves, 1);
     }
 }
 
-void sort_moves(u64 attack_mask, u64 *moves, int num_moves, KillerTable *killer_table, MoveGenStage stage) {
+void sort_moves(ChessBoard *board, u64 attack_mask, u64 *moves, int num_moves,
+                KillerTable *killer_table, u64 *counter_move, u64 prev_move,
+                int *history_table, MoveGenStage stage) {
     switch (stage) {
         case promotions:
-			value_promotions(moves, num_moves);
-			break;
+            value_promotions(moves, num_moves);
+            break;
 
         case captures:
-			value_captures(attack_mask, moves, num_moves, 0);
-			break;
+            value_captures(attack_mask, moves, num_moves, 0);
+            break;
 
         case losing:
-			value_captures(attack_mask, moves, num_moves, 1);
+            value_captures(attack_mask, moves, num_moves, 1);
             break;
 
         case castling:
-			break;
+            break;
 
         case quiets:
-			value_quiets(moves, num_moves, killer_table);
-			break;
+            value_quiets(board, moves, num_moves, killer_table, counter_move,
+                         prev_move, history_table);
+            break;
     }
 }

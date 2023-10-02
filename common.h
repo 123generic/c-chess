@@ -50,5 +50,6 @@ extern const int
 // defined in eval.c
 extern const i16 INF;
 extern const i16 out_of_time;
+extern const int history_max;
 
 #endif  // COMMON_H

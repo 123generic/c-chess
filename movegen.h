@@ -70,10 +70,13 @@ int is_legal(ChessBoard *board, u64 attacked, Side side);
 int generate_promotions(ChessBoard *board, u64 *moves);
 int generate_normal_moves_pawn(ChessBoard *board, u64 *moves, int quiet);
 int generate_normal_moves(ChessBoard *board, u64 *moves, int quiet);
-int generate_moves(ChessBoard *board, u64 *moves, u64 attackers, MoveGenStage stage);
+int generate_moves(ChessBoard *board, u64 *moves, u64 attackers,
+                   MoveGenStage stage);
 
 // Move ordering
-void sort_moves(u64 attack_mask, u64 *moves, int num_moves, KillerTable *killer_table, MoveGenStage stage);
+void sort_moves(ChessBoard *board, u64 attack_mask, u64 *moves, int num_moves,
+                KillerTable *killer_table, u64 *counter_move, u64 prev_move, int *history_table,
+                MoveGenStage stage);
 
 // Utilities
 u64 move_from_uci(ChessBoard *board, char *uci);
