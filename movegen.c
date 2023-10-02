@@ -7,6 +7,8 @@
 #include "common.h"
 #include "lookup.h"
 #include "makemove.h"
+#include "search.h"
+#include <assert.h>
 
 // Utilities
 u64 move_from_uci(ChessBoard *board, char *uci) {
@@ -659,10 +661,24 @@ void value_captures(u64 attack_mask, u64 *moves, int num_moves, int losing) {
 	}
 }
 
+void value_quiets(u64 *moves, int num_moves, KillerTable *killer_table) {
+	u64 move1 = killer_table->move1, move2 = killer_table->move2;
 
+	// all valued as 0 except move 1 -> 2, move 2 -> 1
+	for (int i = 0; i < num_moves; i++) {
+		u64 move = moves[i];
+		if ((move & 0x3FFFFFF) == (move1 & 0x3FFFFFF)) {
+			moves[i] = move | (u64)1 << 28;
+		} else if ((move & 0x3FFFFFF) == (move2 & 0x3FFFFFF)) {
+			moves[i] = move | (u64)2 << 28;
+		} else {
+			moves[i] = move | (u64)0 << 28;
+		}
+	}
+}
 
 // attackers is squares attacked by !board->side (enemies)
-int generate_moves(ChessBoard *board, u64 *moves, u64 attackers,
+int generate_moves(ChessBoard *board, u64 *moves, u64 attackers, KillerTable *killer_table,
                    MoveGenStage stage) {
 	int num_moves;
     switch (stage) {
@@ -685,6 +701,9 @@ int generate_moves(ChessBoard *board, u64 *moves, u64 attackers,
             return generate_castling(board, moves, attackers, 0);
 
         case quiets:
-            return generate_normal_moves(board, moves, 1);
+			assert(killer_table != NULL);
+			num_moves = generate_normal_moves(board, moves, 1);
+			value_quiets(moves, num_moves, killer_table);
+            return num_moves;
     }
 }

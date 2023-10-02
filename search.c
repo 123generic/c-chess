@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #include "board.h"
+#include "common.h"
 #include "eval.h"
 #include "hash_table.h"
 #include "makemove.h"
@@ -10,11 +11,19 @@
 
 const i16 MATE = 30000;
 const u64 max_nodes = 100000000;
+const int max_depth = 256;
 
+// Killer table
+void store_killer(KillerTable *killer_table, u16 ply, u64 move) {
+	killer_table[ply].move2 = killer_table[ply].move1;
+	killer_table[ply].move1 = move;
+}
+
+// Search
 u64 nodes = 0, null_prunes = 0;
 u64 stage_hash = 0, stage_capture = 0, stage_quiet = 0, stage_losing = 0;
 u64 cut_hash = 0, cut_capture = 0, cut_quiet = 0, cut_losing = 0;
-i16 alphabeta(ChessBoard board, u64 attack_mask, i16 alpha, i16 beta, u16 depth,
+i16 alphabeta(ChessBoard board, KillerTable *killer_table, u64 attack_mask, i16 alpha, i16 beta, u16 depth,
               u16 ply, u64 *best_move) {
     // Recursive base case
     if (depth == 0) {
@@ -35,7 +44,7 @@ i16 alphabeta(ChessBoard board, u64 attack_mask, i16 alpha, i16 beta, u16 depth,
         u64 new_attack_mask = attackers(&new_board, !new_board.side);
         u64 _move;
         u16 new_depth = depth < 3 ? 0 : depth - 3;
-        i16 score = -alphabeta(new_board, new_attack_mask, -beta, -beta + 1,
+        i16 score = -alphabeta(new_board, killer_table, new_attack_mask, -beta, -beta + 1,
                                new_depth, ply + 1, &_move);
         if (score == out_of_time) {
             return -out_of_time;
@@ -88,7 +97,7 @@ i16 alphabeta(ChessBoard board, u64 attack_mask, i16 alpha, i16 beta, u16 depth,
             legal_moves++;
             u64 _move;
             i16 score =
-                -alphabeta(new_board, attackers(&new_board, !new_board.side),
+                -alphabeta(new_board, killer_table, attackers(&new_board, !new_board.side),
                            -beta, -alpha, depth - 1, ply + 1, &_move);
             if (score == out_of_time) {
                 return -out_of_time;
@@ -114,7 +123,7 @@ i16 alphabeta(ChessBoard board, u64 attack_mask, i16 alpha, i16 beta, u16 depth,
     u64 moves[256];  //, losing_moves[256];
     for (int i = 0; i < len; i++) {
 		int stage_moves = 0;
-        int num_moves = generate_moves(&board, moves, attack_mask, stage[i]);
+        int num_moves = generate_moves(&board, moves, attack_mask, &killer_table[ply], stage[i]);
 		while (num_moves) {
 			u64 move = select_move(moves, num_moves--);
 			if (!move) break;
@@ -133,14 +142,15 @@ i16 alphabeta(ChessBoard board, u64 attack_mask, i16 alpha, i16 beta, u16 depth,
 				// 	R--;
 
                 // check extension
-                if (new_attack_mask &
-                    new_board.bitboards[new_board.side + king])
+				int king_attacked = new_attack_mask & new_board.bitboards[new_board.side + king];
+				int attacker_attacked = attack_mask & BB_SQUARE(to(move));
+                if (king_attacked && ~attacker_attacked)
                     R++;
 
                 // recurse
                 u64 _move;
 				int new_depth = depth + R - 1 < 0 ? 0 : depth + R - 1;
-                i16 score = -alphabeta(new_board, new_attack_mask, -beta,
+                i16 score = -alphabeta(new_board, killer_table, new_attack_mask, -beta,
                                        -alpha, new_depth, ply + 1, &_move);
 
                 // time management
@@ -151,6 +161,10 @@ i16 alphabeta(ChessBoard board, u64 attack_mask, i16 alpha, i16 beta, u16 depth,
                 // beta cutoff
                 if (score >= beta) {
                     store(board.hash, lower, beta, depth, move);
+
+					if (stage[i] == quiets) {
+						store_killer(killer_table, ply, move);
+					}
 
 					switch (stage[i]) {
 						case promotions:
@@ -205,7 +219,7 @@ i16 alphabeta(ChessBoard board, u64 attack_mask, i16 alpha, i16 beta, u16 depth,
     return best_score;
 }
 
-u64 qnodes = 0;
+u64 qnodes = 0, q_stage = 0, q_cut = 0;
 i16 quiescence(ChessBoard board, i16 alpha, i16 beta, u16 ply) {
     qnodes++;
     nodes++;
@@ -219,16 +233,22 @@ i16 quiescence(ChessBoard board, i16 alpha, i16 beta, u16 ply) {
     i16 best_score = -INF;
     u64 moves[256];
     u64 attack_mask = attackers(&board, !board.side);
-    int num_moves = generate_moves(&board, moves, attack_mask, captures);
+    int num_moves = generate_moves(&board, moves, attack_mask, NULL, captures);
+	int legal_moves = 0;
     while(num_moves) {
 		u64 move = select_move(moves, num_moves--);
 		if (!move) break;
         ChessBoard new_board = make_move(board, move);
         if (is_legal(&new_board, attackers(&new_board, new_board.side),
                      !new_board.side)) {
+			legal_moves++;
             i16 score = -quiescence(new_board, -beta, -alpha, ply + 1);
             if (score == out_of_time) return -out_of_time;
-            if (score >= beta) return beta;
+            if (score >= beta) {
+				q_stage++;
+				q_cut += legal_moves;
+				return beta;
+			}
             if (score > best_score) best_score = score;
             alpha = score > alpha ? score : alpha;
         }
@@ -241,16 +261,19 @@ i16 iterative_deepening(ChessBoard board) {
     nodes = 0;  // vital, used to cutoff for time
     u64 best_move;
     i16 best_score = -INF;
-    for (int depth = 1; /* true */; depth++) {
+
+	KillerTable killer_table[max_depth] = {0};
+
+    for (int depth = 1; depth < max_depth; depth++) {
 		// logging init
         qnodes = 0;
 		null_prunes = 0, 
-		stage_hash = 0, stage_capture = 0, stage_quiet = 0, stage_losing = 0;
-		cut_hash = 0, cut_capture = 0, cut_quiet = 0, cut_losing = 0;
+		stage_hash = 0, stage_capture = 0, stage_quiet = 0, stage_losing = 0, q_stage = 0;
+		cut_hash = 0, cut_capture = 0, cut_quiet = 0, cut_losing = 0, q_cut = 0;
         
 		u64 attack_mask = attackers(&board, !board.side);
         i16 score =
-            alphabeta(board, attack_mask, -INF, INF, depth, 0, &best_move);
+            alphabeta(board, killer_table, attack_mask, -INF, INF, depth, 0, &best_move);
 
         if (score == -out_of_time) {
             return best_score;
@@ -266,10 +289,12 @@ i16 iterative_deepening(ChessBoard board) {
                nodes, score, ascii_move);
         printf("qnodes: %llu\n", qnodes);
 		printf("null prunes: %llu\n", null_prunes);
-		printf("stages: hash — %llu, capture — %llu, quiet — %llu, losing — %llu\n", stage_hash, stage_capture, stage_quiet, stage_losing);
-		printf("cuts: hash — %llu, capture — %llu, quiet — %llu, losing — %llu\n", cut_hash, cut_capture, cut_quiet, cut_losing);
+		printf("stages: hash — %llu, capture — %llu, quiet — %llu, losing — %llu, q — %llu\n", stage_hash, stage_capture, stage_quiet, stage_losing, q_stage);
+		printf("cuts: hash — %llu, capture — %llu, quiet — %llu, losing — %llu, q — %llu\n", cut_hash, cut_capture, cut_quiet, cut_losing, q_cut);
 		printf("\n");
     }
+
+	return best_score;
 }
 
 int main(void) {

@@ -4,6 +4,7 @@
 #include "board.h"
 #include "common.h"
 #include "lookup.h"
+#include "search.h"
 
 // Move representation
 // moves are packed into a u64 (LSB -> MSB)
@@ -69,7 +70,7 @@ int is_legal(ChessBoard *board, u64 attacked, Side side);
 int generate_promotions(ChessBoard *board, u64 *moves);
 int generate_normal_moves_pawn(ChessBoard *board, u64 *moves, int quiet);
 int generate_normal_moves(ChessBoard *board, u64 *moves, int quiet);
-int generate_moves(ChessBoard *board, u64 *moves, u64 attackers,
+int generate_moves(ChessBoard *board, u64 *moves, u64 attackers, KillerTable *killer_table,
                    MoveGenStage stage);
 
 // Utilities
