@@ -32,9 +32,14 @@ u64 probe(u64 hash) {
 }
 
 void store(u64 hash, hash_flag_t flag, i16 score, u16 depth, u64 move) {
-    // always replace TODO update
+    // prefer deepest search
     u64 ind = hash & HASH_TABLE_AND;
-    move &= 0x3FFFFFFFULL;
+
+	u16 existing_depth = hf_depth(hash_table[ind].entry);
+	if (existing_depth >= depth)
+		return;
+
+    move &= 0xFFFFFFFULL;
     // Note bit magic: score & 0xFFFF causes score to promote to unsigned
     // without sign extension
     u64 entry = (u64)flag | (u64)(score & 0xFFFF) << 2 | (u64)depth << 18 |
