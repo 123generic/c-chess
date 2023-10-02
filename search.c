@@ -120,10 +120,11 @@ i16 alphabeta(ChessBoard board, KillerTable *killer_table, u64 attack_mask, i16 
     MoveGenStage stage[] = {promotions, captures, castling, quiets, losing};
     int len = sizeof(stage) / sizeof(stage[0]);
 
-    u64 moves[256];  //, losing_moves[256];
+    u64 moves[256];
     for (int i = 0; i < len; i++) {
 		int stage_moves = 0;
-        int num_moves = generate_moves(&board, moves, attack_mask, &killer_table[ply], stage[i]);
+        int num_moves = generate_moves(&board, moves, attack_mask, stage[i]);
+		sort_moves(attack_mask, moves, num_moves, &killer_table[ply], stage[i]);
 		while (num_moves) {
 			u64 move = select_move(moves, num_moves--);
 			if (!move) break;
@@ -233,7 +234,8 @@ i16 quiescence(ChessBoard board, i16 alpha, i16 beta, u16 ply) {
     i16 best_score = -INF;
     u64 moves[256];
     u64 attack_mask = attackers(&board, !board.side);
-    int num_moves = generate_moves(&board, moves, attack_mask, NULL, captures);
+    int num_moves = generate_moves(&board, moves, attack_mask, captures);
+	sort_moves(attack_mask, moves, num_moves, NULL, captures);
 	int legal_moves = 0;
     while(num_moves) {
 		u64 move = select_move(moves, num_moves--);

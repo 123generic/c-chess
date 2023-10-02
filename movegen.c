@@ -678,32 +678,45 @@ void value_quiets(u64 *moves, int num_moves, KillerTable *killer_table) {
 }
 
 // attackers is squares attacked by !board->side (enemies)
-int generate_moves(ChessBoard *board, u64 *moves, u64 attackers, KillerTable *killer_table,
-                   MoveGenStage stage) {
+int generate_moves(ChessBoard *board, u64 *moves, u64 attackers, MoveGenStage stage) {
 	int num_moves;
     switch (stage) {
         case promotions:
-            num_moves = generate_promotions(board, moves);
-			value_promotions(moves, num_moves);
-			return num_moves;
+            return generate_promotions(board, moves);
 
         case captures:
-			num_moves = generate_normal_moves(board, moves, 0);
-			value_captures(attackers, moves, num_moves, 0);
-			return num_moves;
+			return generate_normal_moves(board, moves, 0);
 
         case losing:
-			num_moves = generate_normal_moves(board, moves, 0);
-			value_captures(attackers, moves, num_moves, 1);
-            return num_moves;
+			return generate_normal_moves(board, moves, 0);
 
         case castling:
             return generate_castling(board, moves, attackers, 0);
 
         case quiets:
-			assert(killer_table != NULL);
-			num_moves = generate_normal_moves(board, moves, 1);
+			return generate_normal_moves(board, moves, 1);
+    }
+}
+
+void sort_moves(u64 attack_mask, u64 *moves, int num_moves, KillerTable *killer_table, MoveGenStage stage) {
+    switch (stage) {
+        case promotions:
+			value_promotions(moves, num_moves);
+			break;
+
+        case captures:
+			value_captures(attack_mask, moves, num_moves, 0);
+			break;
+
+        case losing:
+			value_captures(attack_mask, moves, num_moves, 1);
+            break;
+
+        case castling:
+			break;
+
+        case quiets:
 			value_quiets(moves, num_moves, killer_table);
-            return num_moves;
+			break;
     }
 }
