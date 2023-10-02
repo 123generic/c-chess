@@ -156,9 +156,10 @@ i16 alphabeta(ChessBoard board,
     for (int i = 0; i < len; i++) {
 		int stage_moves = 0;
         int num_moves = generate_moves(&board, moves, attack_mask, stage[i]);
+		int moves_left = num_moves;
 		sort_moves(&board, attack_mask, moves, num_moves, &killer_table[ply], counter_move, prev_move, history_table, stage[i]);
-		while (num_moves) {
-			u64 move = select_move(moves, num_moves--);
+		while (moves_left) {
+			u64 move = select_move(moves, moves_left--);
 			if (!move) break;
 
             ChessBoard new_board = make_move(board, move);
@@ -169,10 +170,6 @@ i16 alphabeta(ChessBoard board,
 
                 u64 new_attack_mask = attackers(&new_board, !new_board.side);
                 i16 R = 0;
-
-				// LMR
-				// if (stage[i] == losing)
-				// 	R--;
 
                 // check extension
 				int king_attacked = new_attack_mask & new_board.bitboards[new_board.side + king];
@@ -202,6 +199,14 @@ i16 alphabeta(ChessBoard board,
 						store_killer(killer_table, ply, move);
 						if (prev_move)
 							counter_move[from(prev_move) * 64 + to(prev_move)] = (move & 0xFFFFFFF);
+
+						// decrease history
+						for (int i = 0; i < num_moves; i++)
+							if ((moves[i] & 0xFFFFFFF) != (hash_move & 0xFFFFFFF)) {
+								int ind = board.side * 64 * 64 + from(moves[i]) * 64 + to(moves[i]);
+								history_table[ind] -= depth * depth / 3;
+								history_table[ind] = history_table[ind] < 0 ? 0 : history_table[ind];
+							}
 						store_history(&board, history_table, hash_move, depth);
 					}
 
