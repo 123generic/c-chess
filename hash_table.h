@@ -4,7 +4,7 @@
 #include "common.h"
 
 // 1 << 24 -> 256MB hash table
-#define HASH_TABLE_SIZE (1 << 24)
+#define HASH_TABLE_SIZE (1 << 26)
 #define HASH_TABLE_AND (HASH_TABLE_SIZE - 1);
 
 // entry:
