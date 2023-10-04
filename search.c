@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <assert.h>
+#include <math.h>
 
 #include "board.h"
 #include "common.h"
@@ -11,7 +12,7 @@
 #include "movegen.h"
 
 const i16 MATE = 30000;
-const u64 max_nodes = 400000000;
+const u64 max_nodes = 100000000;
 const int max_depth = 256;
 const u64 NULL_MOVE = 0;
 const int history_max = 2000;
@@ -71,6 +72,7 @@ u64 stage_hash = 0, stage_capture = 0, stage_quiet = 0, stage_losing = 0;
 u64 cut_hash = 0, cut_capture = 0, cut_quiet = 0, cut_losing = 0;
 
 u64 cut_nodes = 0, first_cut = 0;
+u64 lmr_attempts = 0, lmr_fails = 0;
 i16 alphabeta(int PV,
 			  ChessBoard board, 
 			  KillerTable *killer_table, 
@@ -205,20 +207,48 @@ i16 alphabeta(int PV,
 				stage_moves++;
 
                 u64 new_attack_mask = attackers(&new_board, !new_board.side);
-                i16 E = 0, R = 0;
 
 				int delivering_check = new_attack_mask & new_board.bitboards[new_board.side + king];
+				int in_check = attack_mask & board.bitboards[board.side + king];
 				int attacker_attacked = attack_mask & BB_SQUARE(to(move));
 
 				// check extension
+                i16 E = 0;
                 if (delivering_check && ~attacker_attacked) E++;
 				
 				// standard alpha beta
+				// u64 _move;
+				// int new_depth = depth + E - 1 < 0 ? 0 : depth + E - 1;
+				// int is_pv = PV && legal_moves == 1 || alpha_raised;
+				// i16 score = -alphabeta(is_pv, new_board, killer_table, counter_move, move, history_table, new_attack_mask, -beta,
+				// 					-alpha, new_depth, ply + 1, &_move);
+
+				// LMR
 				u64 _move;
-				int new_depth = depth + E - R - 1 < 0 ? 0 : depth + E - R - 1;
-				int is_pv = PV && legal_moves == 1 || alpha_raised;
-				i16 score = -alphabeta(is_pv, new_board, killer_table, counter_move, move, history_table, new_attack_mask, -beta,
-									-alpha, new_depth, ply + 1, &_move);
+				i16 score;
+				int new_depth = depth + E - 1 < 0 ? 0 : depth + E - 1;
+				int is_pv = (PV && legal_moves == 1) || alpha_raised;
+				// TODO: add back !is_pv
+				int can_lmr = (stage[i] == quiets || stage[i] == losing) && depth >= 3 && E == 0 && !in_check && legal_moves > 1;
+				if (can_lmr) {
+					lmr_attempts++;
+					int R = (int)sqrt((double)(depth - 1)) + (int)sqrt((double)(legal_moves - 1));
+					// int R = 1;
+					R = is_pv ? 2 * R / 3 : R;
+					u16 reduced_depth = new_depth - R < 0 ? 0 : new_depth - R;
+					score = -alphabeta(0, new_board, killer_table, counter_move, move, history_table, 
+									   new_attack_mask, -(alpha + 1), -alpha, reduced_depth, ply + 1, &_move);
+					if (score == out_of_time) return -out_of_time;
+
+					if (score > alpha && score < beta) {
+						lmr_fails++;
+						score = -alphabeta(is_pv, new_board, killer_table, counter_move, move, history_table, 
+									   new_attack_mask, -beta, -alpha, new_depth, ply + 1, &_move);
+					}
+				} else {
+					score = -alphabeta(is_pv, new_board, killer_table, counter_move, move, history_table, 
+									   new_attack_mask, -beta, -alpha, new_depth, ply + 1, &_move);
+				}
 				
 				// time management
 				if (score == out_of_time) {
@@ -359,6 +389,7 @@ i16 iterative_deepening(ChessBoard board) {
 		cut_hash = 0, cut_capture = 0, cut_quiet = 0, cut_losing = 0, q_cut = 0;
 
 		cut_nodes = 0, first_cut = 0;
+		lmr_attempts = 0, lmr_fails = 0;
         
 		u64 attack_mask = attackers(&board, !board.side);
         i16 score =
@@ -386,6 +417,7 @@ i16 iterative_deepening(ChessBoard board) {
 		printf("stages: hash — %llu, capture — %llu, quiet — %llu, losing — %llu, q — %llu\n", stage_hash, stage_capture, stage_quiet, stage_losing, q_stage);
 		printf("cuts: hash — %llu, capture — %llu, quiet — %llu, losing — %llu, q — %llu\n", cut_hash, cut_capture, cut_quiet, cut_losing, q_cut);
 		printf("cut nodes: %llu, first cut: %llu\n", cut_nodes, first_cut);
+		printf("lmr attempts: %llu, lmr fails: %llu\n", lmr_attempts, lmr_fails);
 		print_pv(pv_list, num_pv);
 		printf("\n");
     }
@@ -398,7 +430,13 @@ int main(void) {
 
     ChessBoard board;
     char starting_fen[] =
-        "r1bqkb1r/pppp1ppp/2n5/1B2p3/4n3/5N2/PPPP1PPP/RNBQ1RK1 w kq - 0 5";
+        // "r1bqkb1r/pppp1ppp/2n5/1B2p3/4n3/5N2/PPPP1PPP/RNBQ1RK1 w kq - 0 5";
+		// "r1bqkb1r/pppp1ppp/2n5/1B2p3/4n3/5N2/PPPP1PPP/RNBQR1K1 b kq - 1 5";
+		// "r1bqkb1r/pppp1ppp/2nn4/1B2p3/8/5N2/PPPP1PPP/RNBQR1K1 w kq - 2 6";
+		// "r1bqkb1r/pppp1ppp/2nn4/1B2N3/8/8/PPPP1PPP/RNBQR1K1 b kq - 0 6";
+		// "r1bqkb1r/pppp1ppp/3n4/1B2n3/8/8/PPPP1PPP/RNBQR1K1 w kq - 0 7";
+		// "r1bqkb1r/pppp1ppp/3n4/1B2R3/8/8/PPPP1PPP/RNBQ2K1 b kq - 0 7";
+		"r1bqk2r/ppppbppp/3n4/1B2R3/8/8/PPPP1PPP/RNBQ2K1 w kq - 1 8";
 
     ChessBoard_from_FEN(&board, starting_fen);
     ChessBoard_print(&board);
