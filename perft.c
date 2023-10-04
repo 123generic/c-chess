@@ -171,9 +171,14 @@ int main(void) {
     global_init();
 
     ChessBoard board;
-	char starting_fen[] = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1";  // kiwipete
-	// char starting_fen[] = "r1bqkb1r/pppp1ppp/2n5/1B2p3/4n3/5N2/PPPP1PPP/RNBQ1RK1 w kq - 0 5";  // search position
-	// char starting_fen[] = "k7/8/8/8/8/8/8/K7 w - - 0 1"  // test only
+    char
+        starting_fen[] =
+            "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - "
+            "0 1";  // kiwipete
+                    // char starting_fen[] =
+    // "r1bqkb1r/pppp1ppp/2n5/1B2p3/4n3/5N2/PPPP1PPP/RNBQ1RK1 w kq - 0 5";  //
+    // search position char starting_fen[] = "k7/8/8/8/8/8/8/K7 w - - 0 1"  //
+    // test only
     ChessBoard_from_FEN(&board, starting_fen);
 
     for (int depth = 1; depth <= 5; depth++) {

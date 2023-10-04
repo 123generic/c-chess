@@ -224,15 +224,15 @@ ChessBoard null_move(ChessBoard board) {
 }
 
 u64 select_move(u64 *moves, int num_moves) {
-	int ind = 0, best_score = -1;
-	for (int i = 0; i < num_moves; i++) {
-		if (move_value(moves[i]) > best_score) {
-			best_score = move_value(moves[i]);
-			ind = i;
-		}
-	}
+    int ind = 0, best_score = -1;
+    for (int i = 0; i < num_moves; i++) {
+        if (move_value(moves[i]) > best_score) {
+            best_score = move_value(moves[i]);
+            ind = i;
+        }
+    }
 
-	u64 best = moves[ind];
-	moves[ind] = moves[num_moves - 1];
-	return best_score != -1 ? best : 0;
+    u64 best = moves[ind];
+    moves[ind] = moves[num_moves - 1];
+    return best_score != -1 ? best : 0;
 }

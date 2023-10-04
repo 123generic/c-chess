@@ -35,9 +35,8 @@ void store(u64 hash, hash_flag_t flag, i16 score, u16 depth, u64 move) {
     // prefer deepest search
     u64 ind = hash & HASH_TABLE_AND;
 
-	u16 existing_depth = hf_depth(hash_table[ind].entry);
-	if (existing_depth >= depth)
-		return;
+    u16 existing_depth = hf_depth(hash_table[ind].entry);
+    if (existing_depth >= depth) return;
 
     move &= 0xFFFFFFFULL;
     // Note bit magic: score & 0xFFFF causes score to promote to unsigned

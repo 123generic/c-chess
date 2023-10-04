@@ -663,8 +663,9 @@ void value_captures(u64 attack_mask, u64 *moves, int num_moves, int losing) {
     }
 }
 
-void value_quiets(ChessBoard *board, u64 *moves, int num_moves, KillerTable *killer_table,
-                  u64 *counter_move, u64 prev_move, int *history_table) {
+void value_quiets(ChessBoard *board, u64 *moves, int num_moves,
+                  KillerTable *killer_table, u64 *counter_move, u64 prev_move,
+                  int *history_table) {
     u64 move1 = killer_table->move1, move2 = killer_table->move2;
     move1 &= 0xFFFFFFF;
     move2 &= 0xFFFFFFF;
@@ -679,8 +680,8 @@ void value_quiets(ChessBoard *board, u64 *moves, int num_moves, KillerTable *kil
         } else if (move == counter_move[from(prev_move) * 64 + to(prev_move)]) {
             moves[i] = move | (u64)(history_max + 1) << 28;
         } else {
-			int ind = board->side * 64 * 64 + from(move) * 64 + to(move);
-			int value = history_table[ind];
+            int ind = board->side * 64 * 64 + from(move) * 64 + to(move);
+            int value = history_table[ind];
             moves[i] = move | (u64)value << 28;
         }
     }
