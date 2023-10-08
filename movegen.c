@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "board.h"
 #include "common.h"
@@ -12,21 +13,51 @@
 
 // Utilities
 u64 move_from_uci(ChessBoard *board, char *uci) {
-    // uci: rank-file rank-file [promotion]
-    // TODO: promotion
-    int from, to, piece, captured;
+    int from, to, piece, captured, promote_type = 0;
+    MoveType move_type = UNKNOWN;
+
     from = 7 - (uci[0] - 'a') + 8 * (uci[1] - '1');
     to = 7 - (uci[2] - 'a') + 8 * (uci[3] - '1');
 
     piece = ChessBoard_piece_at(board, from);
     captured = ChessBoard_piece_at(board, to);
+
     if (piece == empty) {
         fprintf(stderr, "Error: No piece at %s [%s(%s):%d]\n", uci, __FILE__,
                 __func__, __LINE__);
         exit(1);
     }
-    return from | to << 6 | piece << 12 | captured << 16 | UNKNOWN << 20;
+
+    // Check for CASTLE
+    if (strcmp(uci, "e1g1") == 0 || strcmp(uci, "e8g8") == 0) {
+        move_type = CASTLE_KING;
+    } else if (strcmp(uci, "e1c1") == 0 || strcmp(uci, "e8c8") == 0) {
+        move_type = CASTLE_QUEEN;
+    }
+    // Check for EN_PASSANT (a pawn moving diagonally to an empty square)
+    else if (piece == pawn && captured == empty && (from % 8 != to % 8)) {
+        move_type = EN_PASSANT;
+    }
+    // Check for PROMOTION
+    else if (strlen(uci) == 5 && piece == pawn) {
+        char promo = uci[4];
+        switch(promo) {
+            case 'q': promote_type = queen; break;
+            case 'r': promote_type = rook; break;
+            case 'b': promote_type = bishop; break;
+            case 'n': promote_type = knight; break;
+            default: 
+                fprintf(stderr, "Error: Invalid promotion %c [%s(%s):%d]\n", promo, __FILE__, __func__, __LINE__);
+                exit(1);
+        }
+        move_type = PROMOTION;
+    } else {
+        move_type = NORMAL;
+    }
+
+    return from | to << 6 | piece << 12 | captured << 16 | move_type << 20 | promote_type << 24;
 }
+
 
 // uci must have length 4+1 (or more)
 void move_to_uci(u64 move, char *uci) {

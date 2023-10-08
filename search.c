@@ -3,6 +3,8 @@
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 #include "board.h"
 #include "common.h"
@@ -232,12 +234,11 @@ i16 alphabeta(int PV, ChessBoard board, KillerTable *killer_table,
                 // TODO: add back !is_pv
                 int can_lmr = (stage[i] == quiets || stage[i] == losing) &&
                               depth >= 3 && E == 0 && !in_check &&
-                              legal_moves > 1;
+                              legal_moves > 2;
                 if (can_lmr) {
                     lmr_attempts++;
                     int R = (int)sqrt((double)(depth - 1)) +
                             (int)sqrt((double)(legal_moves - 1));
-                    // int R = 1;
                     R = is_pv ? 2 * R / 3 : R;
                     u16 reduced_depth = new_depth - R < 0 ? 0 : new_depth - R;
                     score = -alphabeta(0, new_board, killer_table, counter_move,
@@ -333,8 +334,9 @@ i16 alphabeta(int PV, ChessBoard board, KillerTable *killer_table,
     }
 
     // Store Transposition Table
-    if (best_score > old_alpha)
+    if (best_score > old_alpha) {
         store(board.hash, exact, best_score, depth, *best_move);
+	}
     else
         store(board.hash, higher, best_score, depth, 0);
 
@@ -380,6 +382,65 @@ i16 quiescence(ChessBoard board, i16 alpha, i16 beta, u16 ply) {
     }
 
     return best_score;
+}
+
+void write_pv(u64 *pv_list, int num_pv, char *pv_buf) {
+	int buf_p = 0;
+	for (int i = 0; i < num_pv; i++) {
+		u64 move = pv_list[i];
+		char move_buf[6] = {0};
+		move_to_uci(move, move_buf);
+
+		// TODO: bug where h1h1 gets into pv ((0, 0) move)
+		if (strcmp(move_buf, "h1h1") == 0) {
+			break;
+		}
+
+		for (int j = 0; move_buf[j]; j++) {
+			pv_buf[buf_p++] = move_buf[j];
+		}
+		pv_buf[buf_p++] = ' ';
+	}
+	pv_buf[buf_p] = 0;  // overwrite last space with null
+}
+
+void uci_search(ChessBoard board) {
+    nodes = 0;  // vital, used to cutoff for time
+    u64 best_move;
+	u64 pv_list[256];
+    i16 best_score = -INF;
+
+    KillerTable killer_table[256] = {0};
+    u64 counter_move[64 * 64] = {0};
+    int history_table[64 * 64 * 2] = {0};
+
+    for (int depth = 1; depth < max_depth; depth++) {
+        u64 attack_mask = attackers(&board, !board.side);
+        i16 score = alphabeta(1, board, killer_table, counter_move, NULL_MOVE,
+                              history_table, attack_mask, -INF, INF, depth, 0,
+                              &best_move);
+
+        if (score == -out_of_time)
+			break;
+        best_score = score;
+
+        // PV
+        int num_pv = extract_pv(board, pv_list);
+
+		// Write PV
+		int pv_buf_len = num_pv * 7 + 1;
+		char *pv_buf = malloc(sizeof(char) * pv_buf_len);
+		write_pv(pv_list, num_pv, pv_buf);
+
+        // logging
+		printf("info depth %d score cp %d pv %s\n", depth, best_score, pv_buf);
+
+		free(pv_buf);
+    }
+
+	char best_move_str[6] = {0};
+	move_to_uci(pv_list[0], best_move_str);
+	printf("bestmove %s\n", best_move_str);
 }
 
 i16 iterative_deepening(ChessBoard board) {
@@ -444,22 +505,90 @@ i16 iterative_deepening(ChessBoard board) {
     return best_score;
 }
 
-int main(void) {
+void debug(void) {
     global_init();
 
     ChessBoard board;
     char starting_fen[] =
-        // "r1bqkb1r/pppp1ppp/2n5/1B2p3/4n3/5N2/PPPP1PPP/RNBQ1RK1 w kq - 0 5";
+        "r1bqkb1r/pppp1ppp/2n5/1B2p3/4n3/5N2/PPPP1PPP/RNBQ1RK1 w kq - 0 5";
         // "r1bqkb1r/pppp1ppp/2n5/1B2p3/4n3/5N2/PPPP1PPP/RNBQR1K1 b kq - 1 5";
         // "r1bqkb1r/pppp1ppp/2nn4/1B2p3/8/5N2/PPPP1PPP/RNBQR1K1 w kq - 2 6";
         // "r1bqkb1r/pppp1ppp/2nn4/1B2N3/8/8/PPPP1PPP/RNBQR1K1 b kq - 0 6";
         // "r1bqkb1r/pppp1ppp/3n4/1B2n3/8/8/PPPP1PPP/RNBQR1K1 w kq - 0 7";
         // "r1bqkb1r/pppp1ppp/3n4/1B2R3/8/8/PPPP1PPP/RNBQ2K1 b kq - 0 7";
-        "r1bqk2r/ppppbppp/3n4/1B2R3/8/8/PPPP1PPP/RNBQ2K1 w kq - 1 8";
+        // "r1bqk2r/ppppbppp/3n4/1B2R3/8/8/PPPP1PPP/RNBQ2K1 w kq - 1 8";
 
     ChessBoard_from_FEN(&board, starting_fen);
     ChessBoard_print(&board);
 
     iterative_deepening(board);
     printf("Finished search\n");
+}
+
+#define MAX_INPUT_SIZE 1024
+
+char version[] = "October Version 0.0.1";
+
+int main(void) {
+	global_init();
+
+	ChessBoard start_board;
+	ChessBoard_from_FEN(&start_board, 
+		"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+
+	ChessBoard board = start_board;
+
+    char input[MAX_INPUT_SIZE];
+    while (1) {
+        fgets(input, MAX_INPUT_SIZE, stdin);
+        input[strcspn(input, "\n")] = 0;
+
+        if (strcmp(input, "uci") == 0) {
+            printf("id name %s\n", version);
+            printf("uciok\n");
+			continue;
+        }
+
+        if (strcmp(input, "isready") == 0) {
+            printf("readyok\n");
+			continue;
+        }
+
+        if (strcmp(input, "quit") == 0) {
+            break;
+        }
+
+		if (strcmp(input, "display") == 0) {
+			ChessBoard_print(&board);
+			continue;
+		}
+
+		char first_word[10];
+		sscanf(input, "%s", first_word);
+
+		if (strcmp(first_word, "go") == 0) {
+			uci_search(board);
+			continue;
+		}
+
+		if (strcmp(first_word, "position") != 0) {
+			continue;
+		}
+
+		if (strstr(input, "position startpos")) {
+			board = start_board;  // reset board
+
+			char* token = strtok(input, " ");
+			token = strtok(NULL, " ");
+			token = strtok(NULL, " ");
+			while (token != NULL) {
+				u64 move = move_from_uci(&board, token);
+				board = make_move(board, move);
+
+				token = strtok(NULL, " ");
+			}
+		}
+	}
+
+    return 0;
 }
