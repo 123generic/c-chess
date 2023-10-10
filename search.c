@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/time.h>
 
 #include "board.h"
 #include "common.h"
@@ -14,10 +15,35 @@
 #include "movegen.h"
 
 const i16 MATE = 30000;
-const u64 max_nodes = 100000000;
+const u64 max_nodes = 35000000;  // ~4 seconds
 const int max_depth = 256;
 const u64 NULL_MOVE = 0;
 const int history_max = 2000;
+
+// Timing Utilities
+void print_time(void) {
+    struct timeval tv;
+    struct tm *timeinfo;
+    char buffer[80];
+
+    gettimeofday(&tv, NULL);
+    timeinfo = localtime(&tv.tv_sec);
+
+    strftime(buffer, sizeof(buffer), "%M:%S", timeinfo);
+    printf("Current time: %s:%03d\n", buffer, tv.tv_usec/1000); // tv_usec gives microseconds, so we divide by 1000 for milliseconds
+}
+
+struct timeval get_current_time(void) {
+    struct timeval tp;
+    gettimeofday(&tp, NULL);
+    return tp;
+}
+
+int time_exceeded(struct timeval start_time, double duration) {
+    struct timeval current_time = get_current_time();
+    double elapsed_time = (current_time.tv_sec - start_time.tv_sec) + (current_time.tv_usec - start_time.tv_usec) / 1000000.0;
+    return elapsed_time > duration;
+}
 
 // Killer table
 void store_killer(KillerTable *killer_table, u16 ply, u64 move) {
@@ -79,17 +105,18 @@ u64 lmr_attempts = 0, lmr_fails = 0;
 i16 alphabeta(int PV, ChessBoard board, KillerTable *killer_table,
               u64 *counter_move, u64 prev_move, int *history_table,
               u64 attack_mask, i16 alpha, i16 beta, u16 depth, u16 ply,
-              u64 *best_move) {
+              u64 *best_move, struct timeval start_time, double duration) {
     // Recursive base case
     if (depth == 0) {
-        return quiescence(board, alpha, beta, ply);
+        return quiescence(board, alpha, beta, ply, start_time, duration);
     }
 
-    // Time management
     nodes++;
-    if (nodes > max_nodes) {
-        return -out_of_time;
-    }
+
+    // Time management
+	if (time_exceeded(start_time, duration)) {
+		return -out_of_time;
+	}
 
     i16 old_alpha = alpha;
 
@@ -101,7 +128,7 @@ i16 alphabeta(int PV, ChessBoard board, KillerTable *killer_table,
         u16 new_depth = depth < 3 ? 0 : depth - 3;
         i16 score = -alphabeta(0, new_board, killer_table, counter_move,
                                NULL_MOVE, history_table, new_attack_mask, -beta,
-                               -beta + 1, new_depth, ply + 1, &_move);
+                               -beta + 1, new_depth, ply + 1, &_move, start_time, duration);
         if (score == out_of_time) {
             return -out_of_time;
         }
@@ -155,7 +182,7 @@ i16 alphabeta(int PV, ChessBoard board, KillerTable *killer_table,
             i16 score = -alphabeta(PV, new_board, killer_table, counter_move,
                                    hash_move, history_table,
                                    attackers(&new_board, !new_board.side),
-                                   -beta, -alpha, depth - 1, ply + 1, &_move);
+                                   -beta, -alpha, depth - 1, ply + 1, &_move, start_time, duration);
             if (score == out_of_time) {
                 return -out_of_time;
             }
@@ -190,6 +217,10 @@ i16 alphabeta(int PV, ChessBoard board, KillerTable *killer_table,
     u64 moves[256];
     int alpha_raised = 0;
     for (int i = 0; i < len; i++) {
+		int prior_good_moves = 0;
+		if (stage[i] == quiets)
+			prior_good_moves = legal_moves;
+
         int stage_moves = 0;
         int num_moves = generate_moves(&board, moves, attack_mask, stage[i]);
         int moves_left = num_moves;
@@ -232,9 +263,10 @@ i16 alphabeta(int PV, ChessBoard board, KillerTable *killer_table,
                 int new_depth = depth + E - 1 < 0 ? 0 : depth + E - 1;
                 int is_pv = (PV && legal_moves == 1) || alpha_raised;
                 // TODO: add back !is_pv
+				int lmr_legal_moves = prior_good_moves > 1 ? 0 : (prior_good_moves > 0 ? 1 : 2);
                 int can_lmr = (stage[i] == quiets || stage[i] == losing) &&
-                              depth >= 3 && E == 0 && !in_check &&
-                              legal_moves > 2;
+                              depth >= 2 && E == 0 && !in_check &&
+                              legal_moves > lmr_legal_moves;
                 if (can_lmr) {
                     lmr_attempts++;
                     int R = (int)sqrt((double)(depth - 1)) +
@@ -244,7 +276,7 @@ i16 alphabeta(int PV, ChessBoard board, KillerTable *killer_table,
                     score = -alphabeta(0, new_board, killer_table, counter_move,
                                        move, history_table, new_attack_mask,
                                        -(alpha + 1), -alpha, reduced_depth,
-                                       ply + 1, &_move);
+                                       ply + 1, &_move, start_time, duration);
                     if (score == out_of_time) return -out_of_time;
 
                     if (score > alpha && score < beta) {
@@ -252,13 +284,13 @@ i16 alphabeta(int PV, ChessBoard board, KillerTable *killer_table,
                         score = -alphabeta(is_pv, new_board, killer_table,
                                            counter_move, move, history_table,
                                            new_attack_mask, -beta, -alpha,
-                                           new_depth, ply + 1, &_move);
+                                           new_depth, ply + 1, &_move, start_time, duration);
                     }
                 } else {
                     score =
                         -alphabeta(is_pv, new_board, killer_table, counter_move,
                                    move, history_table, new_attack_mask, -beta,
-                                   -alpha, new_depth, ply + 1, &_move);
+                                   -alpha, new_depth, ply + 1, &_move, start_time, duration);
                 }
 
                 // time management
@@ -325,8 +357,8 @@ i16 alphabeta(int PV, ChessBoard board, KillerTable *killer_table,
     // Stalemate and checkmate detection
     if (legal_moves == 0) {
         if (attack_mask & board.bitboards[board.side + king]) {
-            store(board.hash, exact, -MATE + ply, depth, 0);
-            return -MATE + ply;
+            store(board.hash, exact, -INF + ply, depth, 0);
+            return -INF + ply;
         }
 
         store(board.hash, exact, 0, depth, 0);
@@ -344,17 +376,18 @@ i16 alphabeta(int PV, ChessBoard board, KillerTable *killer_table,
 }
 
 u64 qnodes = 0, q_stage = 0, q_cut = 0;
-i16 quiescence(ChessBoard board, i16 alpha, i16 beta, u16 ply) {
+i16 quiescence(ChessBoard board, i16 alpha, i16 beta, u16 ply, struct timeval start_time, double duration) {
     qnodes++;
     nodes++;
 
-    if (nodes > max_nodes) return -out_of_time;
+	if (time_exceeded(start_time, duration))
+		return -out_of_time;
 
     i16 stand_pat = eval(&board);
     if (stand_pat >= beta) return beta;
 
     alpha = stand_pat > alpha ? stand_pat : alpha;
-    i16 best_score = -INF;
+    i16 best_score = stand_pat;
     u64 moves[256];
     u64 attack_mask = attackers(&board, !board.side);
     int num_moves = generate_moves(&board, moves, attack_mask, captures);
@@ -368,7 +401,7 @@ i16 quiescence(ChessBoard board, i16 alpha, i16 beta, u16 ply) {
         if (is_legal(&new_board, attackers(&new_board, new_board.side),
                      !new_board.side)) {
             legal_moves++;
-            i16 score = -quiescence(new_board, -beta, -alpha, ply + 1);
+            i16 score = -quiescence(new_board, -beta, -alpha, ply + 1, start_time, duration);
             if (score == out_of_time) return -out_of_time;
 
             if (score >= beta) {
@@ -401,11 +434,11 @@ void write_pv(u64 *pv_list, int num_pv, char *pv_buf) {
 		}
 		pv_buf[buf_p++] = ' ';
 	}
-	pv_buf[buf_p] = 0;  // overwrite last space with null
+	pv_buf[buf_p - 1] = 0;  // overwrite last space with null
 }
 
-void uci_search(ChessBoard board) {
-    nodes = 0;  // vital, used to cutoff for time
+void uci_search(ChessBoard board, double duration) {
+    nodes = 0;
     u64 best_move;
 	u64 pv_list[256];
     i16 best_score = -INF;
@@ -414,11 +447,13 @@ void uci_search(ChessBoard board) {
     u64 counter_move[64 * 64] = {0};
     int history_table[64 * 64 * 2] = {0};
 
+	struct timeval start_time = get_current_time();
+
     for (int depth = 1; depth < max_depth; depth++) {
         u64 attack_mask = attackers(&board, !board.side);
         i16 score = alphabeta(1, board, killer_table, counter_move, NULL_MOVE,
                               history_table, attack_mask, -INF, INF, depth, 0,
-                              &best_move);
+                              &best_move, start_time, duration);
 
         if (score == -out_of_time)
 			break;
@@ -434,6 +469,7 @@ void uci_search(ChessBoard board) {
 
         // logging
 		printf("info depth %d score cp %d pv %s\n", depth, best_score, pv_buf);
+		fflush(stdout);
 
 		free(pv_buf);
     }
@@ -441,6 +477,7 @@ void uci_search(ChessBoard board) {
 	char best_move_str[6] = {0};
 	move_to_uci(pv_list[0], best_move_str);
 	printf("bestmove %s\n", best_move_str);
+	fflush(stdout);
 }
 
 i16 iterative_deepening(ChessBoard board) {
@@ -452,6 +489,8 @@ i16 iterative_deepening(ChessBoard board) {
     assert(max_depth == 256);
     u64 counter_move[64 * 64] = {0};
     int history_table[64 * 64 * 2] = {0};
+	struct timeval start_time = get_current_time();
+	const double duration = 4;  // constant for debugging
 
     for (int depth = 1; depth < max_depth; depth++) {
         // logging init
@@ -466,7 +505,7 @@ i16 iterative_deepening(ChessBoard board) {
         u64 attack_mask = attackers(&board, !board.side);
         i16 score = alphabeta(1, board, killer_table, counter_move, NULL_MOVE,
                               history_table, attack_mask, -INF, INF, depth, 0,
-                              &best_move);
+                              &best_move, start_time, duration);
 
         if (score == -out_of_time) {
             return best_score;
@@ -529,7 +568,7 @@ void debug(void) {
 
 char version[] = "October Version 0.0.1";
 
-int main(void) {
+void uci_listen(void) {
 	global_init();
 
 	ChessBoard start_board;
@@ -537,6 +576,8 @@ int main(void) {
 		"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 
 	ChessBoard board = start_board;
+
+	setbuf(stdout, NULL);  // no buffering
 
     char input[MAX_INPUT_SIZE];
     while (1) {
@@ -564,10 +605,28 @@ int main(void) {
 		}
 
 		char first_word[10];
-		sscanf(input, "%s", first_word);
+		sscanf(input, "%s ", first_word);
 
 		if (strcmp(first_word, "go") == 0) {
-			uci_search(board);
+			double duration = 4.0;
+			char* token = strtok(input, " ");
+			token = strtok(NULL, " ");  // wtime
+			if (token) {
+				int wtime = atoi(strtok(NULL, " "));
+				strtok(NULL, " ");  // discard winc
+				int winc = atoi(strtok(NULL, " "));
+				strtok(NULL, " ");  // discard btime
+				int btime = atoi(strtok(NULL, " "));
+				strtok(NULL, " ");  // discard binc
+				int binc = atoi(strtok(NULL, " "));
+				strtok(NULL, " ");  // discard movestogo
+				int movestogo = atoi(strtok(NULL, " "));
+
+				double wduration = ((double)wtime / movestogo + winc) / 1000;
+				double bduration = ((double)btime / movestogo + binc) / 1000;
+				duration = board.side == white ? wduration : bduration;
+			}
+			uci_search(board, duration);
 			continue;
 		}
 
@@ -588,7 +647,40 @@ int main(void) {
 				token = strtok(NULL, " ");
 			}
 		}
-	}
 
-    return 0;
+		else if (strstr(input, "position fen")) {
+			int p = 0;
+			for (int i = 0; i < 2; i++) {
+				while (input[p] && input[p] != ' ') p++;
+
+				p++;
+			}
+
+			char fen[100] = {0};
+			int fen_p = 0;
+			for (int i = 0; i < 6; i++) {
+				while (input[p] && input[p] != ' ') {
+					fen[fen_p++] = input[p++];
+				}
+
+				fen[fen_p++] = input[p++];
+			}
+			fen[fen_p - 1] = 0;
+
+			ChessBoard_from_FEN(&board, fen);
+
+			char* token = strtok(&input[p], " ");
+			token = strtok(NULL, " ");
+			while (token != NULL) {
+				u64 move = move_from_uci(&board, token);
+				board = make_move(board, move);
+
+				token = strtok(NULL, " ");
+			}
+		}
+	}
+}
+
+int main(void) {
+	uci_listen();
 }
