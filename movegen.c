@@ -7,6 +7,7 @@
 
 #include "board.h"
 #include "common.h"
+#include "eval.h"
 #include "lookup.h"
 #include "makemove.h"
 #include "search.h"
@@ -41,13 +42,22 @@ u64 move_from_uci(ChessBoard *board, char *uci) {
     // Check for PROMOTION
     else if (strlen(uci) == 5 && piece == pawn) {
         char promo = uci[4];
-        switch(promo) {
-            case 'q': promote_type = queen; break;
-            case 'r': promote_type = rook; break;
-            case 'b': promote_type = bishop; break;
-            case 'n': promote_type = knight; break;
-            default: 
-                fprintf(stderr, "Error: Invalid promotion %c [%s(%s):%d]\n", promo, __FILE__, __func__, __LINE__);
+        switch (promo) {
+            case 'q':
+                promote_type = queen;
+                break;
+            case 'r':
+                promote_type = rook;
+                break;
+            case 'b':
+                promote_type = bishop;
+                break;
+            case 'n':
+                promote_type = knight;
+                break;
+            default:
+                fprintf(stderr, "Error: Invalid promotion %c [%s(%s):%d]\n",
+                        promo, __FILE__, __func__, __LINE__);
                 exit(1);
         }
         move_type = PROMOTION;
@@ -55,9 +65,9 @@ u64 move_from_uci(ChessBoard *board, char *uci) {
         move_type = NORMAL;
     }
 
-    return from | to << 6 | piece << 12 | captured << 16 | move_type << 20 | promote_type << 24;
+    return from | to << 6 | piece << 12 | captured << 16 | move_type << 20 |
+           promote_type << 24;
 }
-
 
 // uci must have length 4+1 (or more)
 void move_to_uci(u64 move, char *uci) {
@@ -584,7 +594,7 @@ int is_legal(ChessBoard *board, u64 attacked, Side side) {
     u64 king_bb = board->bitboards[side + king];
     u64 king_attackers = attacked & king_bb;
 
-    return king_attackers == 0;
+    return king_bb && king_attackers == 0;
 }
 
 // Move generation
@@ -687,33 +697,36 @@ void value_captures(u64 attack_mask, u64 *moves, int num_moves, int losing) {
         if (losing && value > 0) {
             value = 0;
         } else if (losing && value == 0) {
-            value = 1;
+            value = 1001 - piece_value[piece(move) / 2];
         }
 
         moves[i] = (move & 0xFFFFFFF) | (u64)value << 28;
     }
 }
 
+u64 histories = 0, archeology = 0, killed = 0, counter = 0;
 void value_quiets(ChessBoard *board, u64 *moves, int num_moves,
-                  KillerTable *killer_table, u64 *counter_move, u64 prev_move,
-                  int *history_table) {
-    u64 move1 = killer_table->move1, move2 = killer_table->move2;
-    move1 &= 0xFFFFFFF;
-    move2 &= 0xFFFFFFF;
+                  KillerTable *killer_table, u64 *counter_move, u64 prev_move) {
+    u64 killer = killer_table->move1;
+    killer &= 0xFFFFFFF;
 
     // all valued as 0 except move 1 -> 2, move 2 -> 1
+    // Should not move piece to attacked square if square is not defended
     for (int i = 0; i < num_moves; i++) {
         u64 move = moves[i] & 0xFFFFFFF;
-        if (move == move1) {
-            moves[i] = move | (u64)(history_max + 3) << 28;
-        } else if (move == move2) {
-            moves[i] = move | (u64)(history_max + 2) << 28;
+
+        if (move == killer) {
+            moves[i] = move | (u64)(2002) << 28;
+            killed++;
         } else if (move == counter_move[from(prev_move) * 64 + to(prev_move)]) {
-            moves[i] = move | (u64)(history_max + 1) << 28;
+            moves[i] = move | (u64)(2001) << 28;
+            counter++;
         } else {
-            int ind = board->side * 64 * 64 + from(move) * 64 + to(move);
-            int value = history_table[ind];
-            moves[i] = move | (u64)value << 28;
+            int move_val = mg_table[board->side][piece(move) / 2][to(move)] -
+                        mg_table[board->side][piece(move) / 2][from(move)];
+            move_val += 500;
+
+            moves[i] = move | (u64)move_val << 28;
         }
     }
 }
@@ -739,9 +752,9 @@ int generate_moves(ChessBoard *board, u64 *moves, u64 attackers,
     }
 }
 
-void sort_moves(ChessBoard *board, u64 attack_mask, u64 *moves, int num_moves,
-                KillerTable *killer_table, u64 *counter_move, u64 prev_move,
-                int *history_table, MoveGenStage stage) {
+void sort_moves(ChessBoard *board, u64 attack_mask, u64 *moves,
+                int num_moves, KillerTable *killer_table, u64 *counter_move,
+                u64 prev_move, MoveGenStage stage) {
     switch (stage) {
         case promotions:
             value_promotions(moves, num_moves);
@@ -760,7 +773,7 @@ void sort_moves(ChessBoard *board, u64 attack_mask, u64 *moves, int num_moves,
 
         case quiets:
             value_quiets(board, moves, num_moves, killer_table, counter_move,
-                         prev_move, history_table);
+                         prev_move);
             break;
     }
 }

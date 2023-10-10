@@ -3,8 +3,8 @@
 
 #include "common.h"
 
-// 1 << 24 -> 256MB hash table
-#define HASH_TABLE_SIZE (1 << 26)
+// 1 << 23 -> 128MB hash table
+#define HASH_TABLE_SIZE (1 << 23)
 #define HASH_TABLE_AND (HASH_TABLE_SIZE - 1);
 
 // entry:
