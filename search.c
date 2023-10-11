@@ -202,8 +202,8 @@ i16 alphabeta(int PV, ChessBoard board, KillerTable *killer_table,
         int stage_moves = 0;
         int num_moves = generate_moves(&board, moves, attack_mask, stage[i]);
         int moves_left = num_moves;
-        sort_moves(&board, attack_mask, moves, num_moves, &killer_table[ply],
-                   counter_move, prev_move, stage[i]);
+        sort_moves(&board, attack_mask, moves, num_moves, killer_table,
+                   counter_move, prev_move, stage[i], ply);
         while (moves_left) {
             u64 move = select_move(moves, moves_left--);
             if (!move) break;
@@ -226,23 +226,28 @@ i16 alphabeta(int PV, ChessBoard board, KillerTable *killer_table,
                 i16 E = 0;
                 if (delivering_check && ~attacker_attacked) E++;
 
+				// reductions
+				int R = 0;
+
+				// Futility "pruning"
+				if (depth == 2 && E == 0 && !in_check && eval(&board) + 50 < alpha)
+					R++;
+
                 // LMR
                 u64 _move;
                 i16 score;
-                int new_depth = depth + E - 1 < 0 ? 0 : depth + E - 1;
-                int is_pv = (PV && legal_moves == 1) || alpha_raised;
-                // TODO: add back !is_pv
-                int lmr_legal_moves =
-                    prior_good_moves > 1 ? 0 : (prior_good_moves > 0 ? 1 : 2);
+                int new_depth = depth + E - R - 1 < 0 ? 0 : depth + E - R - 1;
+                int is_pv = (legal_moves == 1) || alpha_raised;
+                int lmr_legal_moves = prior_good_moves > 0 ? 0 : 1;
                 int can_lmr = (stage[i] == quiets || stage[i] == losing) &&
-                              depth >= 3 && E == 0 && !in_check &&
+                              depth >= 2 && E == 0 && !in_check &&
                               legal_moves > lmr_legal_moves;
                 if (can_lmr) {
                     lmr_attempts++;
-                    int R = (int)sqrt((double)(depth - 1)) +
-                            (int)sqrt((double)(legal_moves - 1));
-                    R = is_pv ? 2 * R / 3 : R;
-                    u16 reduced_depth = new_depth - R < 0 ? 0 : new_depth - R;
+                    int lmr_reduce = ((int)sqrt((double)(depth - 1)) +
+                                	  (int)sqrt((double)(legal_moves - 1)));
+					lmr_reduce = is_pv ? lmr_reduce * 0.5 : lmr_reduce;
+                    u16 reduced_depth = new_depth - lmr_reduce < 0 ? 0 : new_depth - lmr_reduce;
                     score = -alphabeta(0, new_board, killer_table, counter_move,
                                        move, new_attack_mask, -(alpha + 1),
                                        -alpha, reduced_depth, ply + 1, &_move,
@@ -348,13 +353,16 @@ i16 quiescence(ChessBoard board, i16 alpha, i16 beta, u16 ply,
     i16 stand_pat = eval(&board);
     if (stand_pat >= beta) return beta;
 
+	// Delta pruning
+	if (stand_pat < alpha - 900) return alpha;
+
     alpha = stand_pat > alpha ? stand_pat : alpha;
     i16 best_score = stand_pat;
     u64 moves[256];
     u64 attack_mask = attackers(&board, !board.side);
     int num_moves = generate_moves(&board, moves, attack_mask, captures);
     sort_moves(&board, attack_mask, moves, num_moves, NULL, NULL, NULL_MOVE,
-               captures);
+               captures, ply);
     int legal_moves = 0;
     while (num_moves) {
         u64 move = select_move(moves, num_moves--);
@@ -508,8 +516,9 @@ void debug(void) {
 
     ChessBoard board;
     char starting_fen[] =
+		"rnb1kb1r/ppp1pppp/3q1n2/8/2BP4/2N5/PPP2PPP/R1BQK1NR b KQkq - 2 5";
         // "r1bqkb1r/pppp1ppp/2n5/1B2p3/4n3/5N2/PPPP1PPP/RNBQ1RK1 w kq - 0 5";
-		"b2b1r1k/3R1ppp/4qP2/4p1PQ/4P3/5B2/4N1K1/8 w - - 0 1";
+		// "b2b1r1k/3R1ppp/4qP2/4p1PQ/4P3/5B2/4N1K1/8 w - - 0 1";
     // "r1bqkb1r/pppp1ppp/2n5/1B2p3/4n3/5N2/PPPP1PPP/RNBQR1K1 b kq - 1 5";
     // "r1bqkb1r/pppp1ppp/2nn4/1B2p3/8/5N2/PPPP1PPP/RNBQR1K1 w kq - 2 6";
     // "r1bqkb1r/pppp1ppp/2nn4/1B2N3/8/8/PPPP1PPP/RNBQR1K1 b kq - 0 6";
@@ -583,9 +592,10 @@ void uci_listen(void) {
                 strtok(NULL, " ");  // discard movestogo
                 int movestogo = atoi(strtok(NULL, " "));
 
-                double wduration = ((double)wtime / movestogo + winc) / 1000 - 0.01;
-                double bduration = ((double)btime / movestogo + binc) / 1000 - 0.01;
+                double wduration = ((double)wtime / (movestogo + 1) + winc) / 1000;
+                double bduration = ((double)btime / (movestogo + 1) + binc) / 1000;
                 duration = board.side == white ? wduration : bduration;
+				duration -= 0.05;  // error delta
             }
             uci_search(board, duration);
             continue;

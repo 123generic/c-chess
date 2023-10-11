@@ -76,7 +76,7 @@ int generate_moves(ChessBoard *board, u64 *moves, u64 attackers,
 // Move ordering
 void sort_moves(ChessBoard *board, u64 attack_mask, u64 *moves, int num_moves,
                 KillerTable *killer_table, u64 *counter_move, u64 prev_move,
-                MoveGenStage stage);
+                MoveGenStage stage, int ply);
 
 // Utilities
 u64 move_from_uci(ChessBoard *board, char *uci);

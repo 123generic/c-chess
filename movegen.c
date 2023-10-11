@@ -704,20 +704,36 @@ void value_captures(u64 attack_mask, u64 *moves, int num_moves, int losing) {
     }
 }
 
-u64 histories = 0, archeology = 0, killed = 0, counter = 0;
+u64 archeology = 0, killed = 0, killed1 = 0, killed2 = 0, killed3 = 0, counter = 0;
 void value_quiets(ChessBoard *board, u64 *moves, int num_moves,
-                  KillerTable *killer_table, u64 *counter_move, u64 prev_move) {
-    u64 killer = killer_table->move1;
-    killer &= 0xFFFFFFF;
+                  KillerTable *killer_table, u64 *counter_move, u64 prev_move, int ply) {
+	u64 kill1 = killer_table[ply].move1, kill2 = killer_table[ply].move2;
+	u64 kill3 = 0, kill4 = 0;
+	if (ply >= 2) {
+		kill3 = killer_table[ply - 2].move1, kill4 = killer_table[ply - 2].move2;
+	}
+    kill1 &= 0xFFFFFFF;
+	kill2 &= 0xFFFFFFF;
+	kill3 &= 0xFFFFFFF;
+	kill4 &= 0xFFFFFFF;
 
     // all valued as 0 except move 1 -> 2, move 2 -> 1
     // Should not move piece to attacked square if square is not defended
     for (int i = 0; i < num_moves; i++) {
         u64 move = moves[i] & 0xFFFFFFF;
 
-        if (move == killer) {
-            moves[i] = move | (u64)(2002) << 28;
-            killed++;
+        if (move == kill1) {
+            moves[i] = move | (u64)(2005) << 28;
+            killed++; 
+		} else if (move == kill2) {
+			moves[i] = move | (u64)(2004) << 28;
+			killed1++;
+		} else if (move == kill3) {
+			moves[i] = move | (u64)(2003) << 28;
+			killed2++;
+		} else if (move == kill4) {
+			moves[i] = move | (u64)(2002) << 28;
+			killed3++;
         } else if (move == counter_move[from(prev_move) * 64 + to(prev_move)]) {
             moves[i] = move | (u64)(2001) << 28;
             counter++;
@@ -727,6 +743,7 @@ void value_quiets(ChessBoard *board, u64 *moves, int num_moves,
             move_val += 500;
 
             moves[i] = move | (u64)move_val << 28;
+			archeology++;
         }
     }
 }
@@ -754,7 +771,7 @@ int generate_moves(ChessBoard *board, u64 *moves, u64 attackers,
 
 void sort_moves(ChessBoard *board, u64 attack_mask, u64 *moves,
                 int num_moves, KillerTable *killer_table, u64 *counter_move,
-                u64 prev_move, MoveGenStage stage) {
+                u64 prev_move, MoveGenStage stage, int ply) {
     switch (stage) {
         case promotions:
             value_promotions(moves, num_moves);
@@ -773,7 +790,7 @@ void sort_moves(ChessBoard *board, u64 attack_mask, u64 *moves,
 
         case quiets:
             value_quiets(board, moves, num_moves, killer_table, counter_move,
-                         prev_move);
+                         prev_move, ply);
             break;
     }
 }

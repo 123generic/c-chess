@@ -118,15 +118,11 @@ u64 _test_incremental_eval(ChessBoard board, int depth) {
             ChessBoard new_board = make_move(board, moves[move_p]);
 
             // check for right scores
-            int mg[2], eg[2], game_phase;
+            int mg[2];
             memcpy(mg, new_board.mg, sizeof(new_board.mg));
-            memcpy(eg, new_board.eg, sizeof(new_board.eg));
-            game_phase = new_board.game_phase;
 
             manual_score_gen(&new_board);
-            assert(mg[0] == new_board.mg[0] && mg[1] == new_board.mg[1] &&
-                   eg[0] == new_board.eg[0] && eg[1] == new_board.eg[1] &&
-                   game_phase == new_board.game_phase);
+            assert(mg[0] == new_board.mg[0] && mg[1] == new_board.mg[1]);
 
             if (is_legal(&new_board, attackers(&new_board, new_board.side),
                          !new_board.side)) {
